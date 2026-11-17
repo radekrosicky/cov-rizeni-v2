@@ -13,7 +13,7 @@ až v etapě, která daný modul potřebuje, vždy i s jeho testy.
 | `src/lib/format.ts` (+ test) | `formatCzk` (částky v Kč), `formatIsoDateCz`, `formatDateTimeCz`, `plural` (1 / 2–4 / 5+) | žádné | Bez úprav. |
 | `src/server/adapters/storage.ts` – rozhraní `FileStorage`, `assertSafeKey`, `LocalFileStorage` | vzor úložiště souborů s ochranou proti `../` | `node:fs`, `node:path` | Až po schválení Q4; rozšířit o SHA-256 a neměnnost souborů. |
 | `src/server/domain/errors.ts` | `DomainError` s kódem a českou zprávou | žádné | Bez úprav. |
-| `.devcontainer/devcontainer.json`, `trustedHosts.ts` (myšlenka) | Codespaces, bezpečné povolení adresy Codespaces | – | **Už využito** (V2 má vlastní, menší `src/lib/devOrigins.ts` a devcontainer). |
+| `.devcontainer/devcontainer.json`, `trustedHosts.ts` (myšlenka) | Codespaces, bezpečné povolení adresy Codespaces | – | **Využito** v `src/lib/devOrigins.ts`. Ve V2-0 se převzala jen část (`allowedDevOrigins`); chybějící `serverActions.allowedOrigins` způsobilo v Codespaces chybu „Invalid Server Actions request“ – doplněno opravou ve V2-1 (localhost:3000 + adresa tohoto Codespaces, jen `npm run dev` v Codespaces). |
 | barvy a vzhled (`globals.css`, `Sidebar.tsx`) | schválený vizuální styl | Tailwind 4 | **Už využito** – barvy převzaté, komponenty napsané znovu pro 3 položky menu. |
 
 ## B. Převzít jen myšlenku / pravidla, ne kód

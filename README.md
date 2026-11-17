@@ -137,6 +137,7 @@ docs/             dokumentace
 - [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – tabulky, přístup uživatelů, migrace a její stav
 - [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 a rozhodnutí
 - [docs/PLAN-V2-2.md](docs/PLAN-V2-2.md) / [docs/DATABAZE-V2-2.md](docs/DATABAZE-V2-2.md) – dokumenty: plán, databáze, bezpečnost nahrávání
+- [docs/PLAN-V2-3.md](docs/PLAN-V2-3.md) – plán V2-3 Excelový rozpočet a sledování materiálu (návrh ke schválení)
 - [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický model celé aplikace
 - [docs/PREVZETI-Z-V1.md](docs/PREVZETI-Z-V1.md) – co se převzalo / lze převzít z V1

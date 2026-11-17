@@ -2,7 +2,7 @@
 // Pravidlo: každá služba NEJDŘÍV ověří oprávnění (doména), pak v JEDNÉ transakci provede změnu i zápis historie.
 import { and, eq } from "drizzle-orm";
 import { canProject, DENY_MESSAGES, type Actor, type ProjectAction } from "../../domain/access/permissions.ts";
-import type { GlobalRole } from "../../domain/values.ts";
+import type { GlobalRole, HistoryEntityType } from "../../domain/values.ts";
 import type { DbOrTx } from "../db/client.ts";
 import { historyEntries, projectMembers, projects, type Project } from "../db/schema.ts";
 import { DomainError } from "../errors.ts";
@@ -53,7 +53,7 @@ export async function writeHistory(
   entry: {
     actorId: string;
     projectId: string | null;
-    entityType: "user" | "project" | "project_member" | "event";
+    entityType: HistoryEntityType;
     entityId: string;
     action: (typeof historyEntries.$inferInsert)["action"];
     changes?: Changes;

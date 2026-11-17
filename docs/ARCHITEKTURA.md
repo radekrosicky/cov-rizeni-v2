@@ -1,6 +1,7 @@
 # Technická architektura ČOV Řízení 2.0
 
-Stav: etapa V2-1. Všechny vrstvy existují včetně `server` (databáze PGlite + Drizzle, služby, vývojová identita).
+Stav: etapa V2-2 (dokumenty: `src/server/storage` – rozhraní `FileStorage`, `src/server/documents` – kontrola obsahu souborů).
+Původně: etapa V2-1. Všechny vrstvy existují včetně `server` (databáze PGlite + Drizzle, služby, vývojová identita).
 
 Konvence importů: `src/domain` a `src/server` používají **relativní importy s příponou `.ts`**, aby šly
 databázové skripty spouštět přímo v Node.js (bez další knihovny). Obrazovky (`src/app`, `src/ui`) používají `@/…`

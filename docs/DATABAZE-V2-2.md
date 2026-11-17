@@ -1,9 +1,7 @@
 # Databáze V2-2 – návrh migrace 0002 (Dokumenty) ke schválení
 
-> **Stav: NÁVRH. Migrace 0002 NENÍ aplikovaná** na vývojovou databázi (ta má dál 5 tabulek z V2-1).
-> Testy ji spouští jen na dočasných databázích v paměti. Skripty `npm run db:setup` / `db:migrate`
-> ji odmítnou, dokud není uvedena v `drizzle/schvalene-migrace.json` (nová pojistka – viz kap. 6).
-> Schválené migrace V2-1 (`0000`, `0001`) zůstaly beze změny.
+> **Stav: SCHVÁLENO a APLIKOVÁNO (17. 11. 2026)** na vývojovou databázi V2 s fiktivními daty.
+> Migrace `0002_v2_2_dokumenty` je v `drizzle/schvalene-migrace.json`. Schválené migrace se už nemění.
 
 ## 1. Soubory
 
@@ -125,9 +123,24 @@ testů v prohlížeči (`data/e2e`). Po vašem schválení přidám `0002_v2_2_d
 - Ve vašem Codespaces po schválení: zastavit aplikaci → `git pull` → `npm run db:migrate` → `npm run dev`.
 - Žádná nová knihovna.
 
-## 8. Výsledek kontrol
+## 8. Výsledek kontrol při návrhu (před schválením)
 
 - `npm run check` (typy, lint, testy, build): ✅ – 143 testů (12 souborů), z toho 12 nových pro migraci 0002.
 - `npm run test:e2e`: ✅ 10 testů (funkce V2-1 beze změny).
 - `drizzle-kit check`: ✅; schéma a migrace jsou ve shodě.
 - Vývojová databáze: beze změny (5 tabulek), migrace odmítnuta pojistkou.
+
+## 9. Implementace V2-2 – doplňující poznámky
+
+- **Oživení stránky ve vývojovém režimu:** Next.js 16 (Turbopack) oživí stránku až po spojení WebSocket
+  `/_next/hmr`. Formulář pro nahrávání proto povolí tlačítko až po oživení; jinak ukáže „Načítám formulář…
+  obnovte stránku“ – nic se neodešle naslepo (ověřeno testem). V Codespaces Next.js spojení z adresy
+  Codespace přijímá (`allowedDevOrigins`).
+- **„Otevřít“ PDF:** obrázky se posílají s `Content-Security-Policy: sandbox`; u PDF se `sandbox` nepoužívá,
+  protože vestavěný prohlížeč PDF by se v izolovaném režimu nezobrazil. Bezpečnost u PDF zajišťuje ověřený
+  obsah (`%PDF-`), pevně daný typ `application/pdf` a `nosniff`.
+- **Přetržené nahrání bez ohlášené velikosti:** server přestane číst hned po překročení limitu; klient,
+  který dál zapisuje, může dostat ukončené spojení místo odpovědi 413. Prohlížeč velikost vždy ohlásí,
+  takže uživatel dostane srozumitelnou odpověď hned.
+- **Úklid:** dočasné soubory (`.tmp/`) se mažou při chybě i přerušení; zbytky po případném pádu serveru se
+  uklidí automaticky při dalším nahrávání (starší než 1 hodina).

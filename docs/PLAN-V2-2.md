@@ -1,7 +1,7 @@
 # Plán etapy V2-2 – Dokumenty zakázky
 
-> **Stav: SCHVÁLENO s upřesněním (17. 11. 2026).** Návrh migrace 0002 čeká na schválení – viz
-> [DATABAZE-V2-2.md](DATABAZE-V2-2.md). Upřesnění níže mají přednost před původním textem.
+> **Stav: DOKONČENO (17. 11. 2026)** – migrace 0002 schválena a aplikována, implementace hotová.
+> Detaily v [DATABAZE-V2-2.md](DATABAZE-V2-2.md). Upřesnění v kap. 7 mají přednost před původním textem.
 > Vychází z Master zadání v1.0 (kap. 5.6, 5.7, 8, 11 – scénáře S1, S9), rozhodnutí Q1–Q12
 > a funkční V2-1 (větev `v2-1-zakazka-opravneni`, commit `dfc4f46`).
 > Zakázky, termíny, role a oprávnění z V2-1 se nemění.
@@ -169,3 +169,16 @@ Před odevzdáním: `npm run check` a `npm run test:e2e`.
 5. Nahrávání ověřit i v Codespaces; zvolit bezpečný postup pro soubory do 50 MB (ne jen zvýšit limit) –
    viz DATABAZE-V2-2.md, kap. 5 (samostatná adresa s průběžným zápisem místo serverové akce).
 6. Testovat malé soubory, soubory blízko limitu a odmítnutí souboru přes limit.
+
+## 8. Stav po implementaci
+
+- ✅ Migrace 0002 schválena, zařazena mezi schválené a aplikována na vývojovou databázi (data V2-1 zachována).
+- ✅ Nahrání nového dokumentu = jedna logická operace (soubor → kontrola → uložení bez přepsání → jedna transakce);
+  při chybě nic nezůstane (soubor ani dočasný soubor).
+- ✅ XLSX/DOCX: struktura, makra, šifrování, nebezpečné názvy, skutečně rozbalený obsah s limity (zip bomby).
+- ✅ Oprávnění ke stažení, nahrání a změně aktuální revize vždy na serveru podle konkrétní zakázky.
+- ✅ Limit 50 MB ověřen (přesně 50 MB projde, o bajt víc ne; 49 MB v prohlížeči; přerušení; ohlášená i skutečná velikost).
+- ✅ Prohlížeč: nahrát → otevřít → stáhnout → nová revize → stará zůstane → změna aktuální revize → historie.
+- ✅ Codespaces (simulace obou kombinací hlaviček včetně WebSocket): 4 identity, nahrání malého i ~45 MB souboru, otevřít, stáhnout.
+- ✅ Produkční režim: dokumenty bez skutečného přihlášení nejdou nahrát (401) ani stáhnout (404).
+- ⏸ Zastaveno před V2-3.

@@ -27,6 +27,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}/zakazky`,
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { DATABASE_DIR: "data/e2e/db", ALLOW_UNAPPROVED_MIGRATIONS: "e2e-test-db", DEV_IDENTITIES: "enabled", NEXT_TELEMETRY_DISABLED: "1" },
+    env: { DATABASE_DIR: "data/e2e/db", FILES_DIR: "data/e2e/files", ALLOW_UNAPPROVED_MIGRATIONS: "e2e-test-db", DEV_IDENTITIES: "enabled", NEXT_TELEMETRY_DISABLED: "1" },
   },
 });

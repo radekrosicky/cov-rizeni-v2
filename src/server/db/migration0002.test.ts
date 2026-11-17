@@ -201,8 +201,8 @@ describe("migrace 0002 – ochrany dokumentů a revizí", () => {
 });
 
 describe("pojistka schvalování migrací", () => {
-  it("návrh 0002 není mezi schválenými – skripty vývojové databáze ho neaplikují", async () => {
+  it("všechny migrace ve složce drizzle/ jsou schválené (0000–0002)", async () => {
     const { pendingApproval } = await import("./migrate.ts");
-    expect(pendingApproval()).toEqual(["0002_v2_2_dokumenty"]);
+    expect(pendingApproval()).toEqual([]);
   });
 });

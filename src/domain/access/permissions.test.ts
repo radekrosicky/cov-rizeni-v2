@@ -14,6 +14,8 @@ const ALL: ProjectAction[] = [
   "project.archive",
   "project.unarchive",
   "members.manage",
+  "document.view",
+  "document.manage",
 ];
 
 describe("oprávnění – správce", () => {
@@ -91,5 +93,22 @@ describe("vedoucí a přidělitelný přístup", () => {
     const { assignableAccess } = await import("./permissions.ts");
     expect(assignableAccess("viewer")).toEqual(["read"]);
     expect(assignableAccess("deputy")).toEqual(["edit", "read"]);
+  });
+});
+
+describe("oprávnění – dokumenty (V2-2)", () => {
+  it("prohlížet a stahovat smí všichni s přístupem, i sledující a i u archivované zakázky", () => {
+    for (const role of ["admin", "deputy", "viewer"] as const) {
+      expect(ok(actor(role), "document.view", ctx("read"))).toBe(true);
+      expect(ok(actor(role), "document.view", ctx("read", "archived"))).toBe(true);
+    }
+  });
+  it("spravovat smí správce a zástupce s úpravami; sledující nikdy; archivovaná zakázka nikdo", () => {
+    expect(ok(actor("admin"), "document.manage", ctx(null))).toBe(true);
+    expect(ok(actor("deputy"), "document.manage", ctx("edit"))).toBe(true);
+    expect(canProject(actor("deputy"), "document.manage", ctx("read"))).toEqual({ allowed: false, reason: "read_only" });
+    expect(canProject(actor("viewer"), "document.manage", ctx("edit"))).toEqual({ allowed: false, reason: "read_only" });
+    expect(canProject(actor("admin"), "document.manage", ctx(null, "archived"))).toEqual({ allowed: false, reason: "archived" });
+    expect(canProject(actor("deputy"), "document.view", ctx(null))).toEqual({ allowed: false, reason: "not_member" });
   });
 });

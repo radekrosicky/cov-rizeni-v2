@@ -1,5 +1,5 @@
 // Chyba, kterou lze srozumitelně ukázat uživateli (česky). Vše ostatní je neočekávaná chyba.
-export type DomainErrorCode = "validation" | "not_found" | "forbidden" | "conflict";
+export type DomainErrorCode = "validation" | "not_found" | "forbidden" | "conflict" | "too_large";
 
 export class DomainError extends Error {
   readonly code: DomainErrorCode;

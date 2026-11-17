@@ -15,7 +15,7 @@
 - Nikdy necommituj přímo do `main`; pracovní větev + pull request.
 - Pouze fiktivní data. Žádné skutečné firemní údaje, jména ani smlouvy.
 - Žádné placené služby ani placená AI API. Nová závislost = zdůvodnit a nechat schválit.
-- Nová migrace = předložit ke schválení před aplikací. Schválené migrace (`drizzle/0000`, `0001`) neměnit.
+- Nová migrace = předložit ke schválení před aplikací; do `drizzle/schvalene-migrace.json` až po schválení. Schválené migrace (`0000`–`0002`) neměnit.
 - `npm run db:reset` jen s vypnutou aplikací; maže jen vývojovou databázi v `data/`.
 - Nepředstírej neexistující funkce. Žádné falešné přihlášení vydávané za zabezpečení.
 - Neměň repozitář V1 (`radekrosicky/cov-rizeni`).
@@ -27,6 +27,9 @@
   `src/domain` nesmí importovat React, Next.js, Node API ani databázi (hlídá lint i test).
 - `src/server/services`: každá změna = oprávnění (doména) + jedna transakce + historie + kontrola `version`.
 - Obrazovky nevolají databázi přímo – jen `src/server/app.ts` (hlídá lint).
+- Soubory jen přes rozhraní `FileStorage` (nikdy nepřepsat, klíč generuje server); typ souboru podle obsahu.
+- Nahrávání souborů jen samostatnou adresou s průběžným zpracováním a kontrolou původu (ne serverovou akcí).
+- V `src/domain` a `src/server` nepoužívat zkrácené vlastnosti v konstruktoru (`constructor(private x)`) – Node je nespustí.
 - V `src/domain` a `src/server` relativní importy s příponou `.ts` (skripty běží přímo v Node.js).
 - UI česky, identifikátory v kódu anglicky, komentáře česky.
 - Před odevzdáním: `npm run check` a `npm run test:e2e` musí projít.

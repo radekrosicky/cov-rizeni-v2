@@ -3,89 +3,107 @@
 Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vod.
 **Není to ERP.** Hlavní otázka: *„Co dnes musím řešit a proč?“*
 
-> **Stav: etapa V2-0 – technický základ.**
-> Aplikace zatím umí jen navigaci a prázdné, jasně označené obrazovky.
-> Není v ní přihlášení, databáze ani ukládání dat. Používejte pouze fiktivní údaje.
+> **Stav: etapa V2-1 – zakázka, uživatelé, oprávnění, události a milníky.**
+> Pouze fiktivní data. Skutečné přihlášení zatím neexistuje – ve vývojovém režimu se volí
+> **fiktivní vývojová identita** (není to zabezpečení; v produkčním režimu je technicky vypnutá).
 
-## Co je hotové (V2-0)
+## Co funguje (V2-1)
 
 | Oblast | Stav |
 |---|---|
-| Next.js 16 + TypeScript (strict) + Tailwind CSS 4 | ✅ funguje |
-| Navigace „Co dnes řešit“ · „Zakázky“ · „Moje úkoly“ (počítač i mobil) | ✅ funguje |
-| Prázdné stavy s označením „Zatím není k dispozici“ | ✅ funguje |
-| Kontrola typů, lint, automatické testy (Vitest), build | ✅ funguje |
-| Hlídání hranic vrstev (doména bez Reactu / Next.js / databáze) | ✅ lint + test |
-| GitHub Codespaces (`.devcontainer`) a automatická kontrola (GitHub Actions) | ✅ připraveno |
-| Zakázky, materiál, připravenost, úkoly, dokumenty, KD | ⛔ zatím neexistuje |
-| Přihlášení a oprávnění | ⛔ zatím neexistuje (záměrně nic nepředstíráme) |
-| Databáze a ukládání souborů | 🟡 schéma a návrh migrace hotové, **neaplikováno** – čeká na schválení, viz [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) |
+| Zakázky: seznam, založení, úprava, archivace / obnova s důvodem | ✅ |
+| Události a milníky: smluvní / plánovaný / skutečný termín (vše nepovinné), více událostí stejného typu, zrušení s důvodem | ✅ |
+| Role správce / zástupce / sledující, přístup po zakázkách, kontrola na serveru | ✅ |
+| Vedoucí zakázky je vždy členem s úpravami a nikdy sledující (hlídá i databáze) | ✅ |
+| Historie změn (jen přidávání), čtou ji i sledující | ✅ |
+| Ochrana před tichým přepsáním souběžných úprav | ✅ |
+| Fiktivní vývojové identity (jen `npm run dev`) | ✅ |
+| Detail zakázky – záložky Materiál, Úkoly, Připravenost, Dokumenty | ⛔ jasně označené prázdné stavy |
+| „Co dnes řešit“, „Moje úkoly“ | ⛔ jasně označené prázdné stavy |
+| Skutečné přihlášení e-mailem a heslem | ⛔ samostatná etapa |
 
 ## Spuštění v GitHub Codespaces
 
-1. Na stránce repozitáře na GitHubu přepněte větev na pracovní větev V2 (např. `v2-0-technicky-zaklad`).
-2. Klikněte na zelené tlačítko **Code → Codespaces → Create codespace on …**.
-3. Počkejte, až se prostředí připraví. Knihovny se nainstalují samy (`npm ci`), trvá to 1–3 minuty.
-4. V terminálu dole spusťte:
+1. Na GitHubu přepněte na větev `v2-1-zakazka-opravneni`.
+2. **Code → Codespaces → Create codespace on …**
+3. Počkejte na přípravu: nainstalují se knihovny a **založí se vývojová databáze s fiktivními daty**
+   (`npm run db:setup -- --if-missing`).
+4. V terminálu spusťte:
    ```bash
    npm run dev
    ```
-5. Vpravo dole se nabídne **Open in Browser** (případně záložka **Ports → 3000 → ikona zeměkoule**).
+5. Otevřete port 3000 (**Open in Browser**). Klikněte na **Vybrat fiktivní identitu** a zvolte např. *Zástupce*.
 
 Port 3000 nechte **soukromý** (výchozí). Nikdy ho nepřepínejte na „Public“.
 
+Fiktivní uživatelé: **Správce**, **Zástupce**, **Sledující 1**, **Sledující 2** (e-maily `@example.test`).
+Fiktivní zakázky: *ČOV Fiktivín* (sledující 1 čte), *ČOV Testovice* (sledující 2 čte), *ČOV Vzorová* (sledující ji nevidí).
+
 ## Spuštění na vlastním počítači
 
-Potřebujete Node.js 22 (verze je v souboru `.nvmrc`).
+Potřebujete Node.js 22.18 nebo novější (`.nvmrc`).
 
 ```bash
 npm ci
 ```
 
 ```bash
-npm run dev
+npm run db:setup
 ```
 
-Aplikace poběží na <http://localhost:3000>.
+```bash
+npm run dev
+```
 
 ## Příkazy
 
 | Příkaz | Co dělá |
 |---|---|
-| `npm run dev` | vývojový server s automatickým obnovováním |
-| `npm run typecheck` | kontrola typů TypeScriptu |
-| `npm run lint` | kontrola kvality kódu (ESLint) včetně hranic vrstev |
-| `npm test` | automatické testy (Vitest) |
-| `npm run build` | produkční sestavení |
-| `npm run check` | vše výše najednou (typy → lint → testy → build) |
-| `npm run db:check` | kontrola konzistence migrací (nic neaplikuje) |
-| `npm run db:generate` | vygeneruje novou migraci ze schématu (nic neaplikuje) |
+| `npm run dev` | vývojový server (s fiktivními identitami) na <http://localhost:3000> |
+| `npm run check` | typy → lint → testy → build |
+| `npm test` | automatické testy (Vitest; databázové testy na dočasné databázi v paměti) |
+| `npm run test:e2e` | testy v prohlížeči (Playwright) na samostatné testovací databázi `data/e2e` |
+| `npm run db:setup` | založí **prázdnou** vývojovou databázi, aplikuje migrace, nahraje fiktivní data; existující nepřepíše |
+| `npm run db:reset` | smaže vývojovou databázi a založí ji znovu s fiktivními daty (aplikace nesmí běžet) |
+| `npm run db:migrate` | doplní nové schválené migrace do existující vývojové databáze |
+| `npm run db:check` / `db:generate` | kontrola / vygenerování migrací (nic neaplikuje) |
+
+Testy v prohlížeči v Codespaces potřebují jednou nainstalovat prohlížeč (zdarma):
+
+```bash
+npx playwright install --with-deps chromium
+```
 
 ## Struktura projektu
 
 ```
 src/
-  app/        obrazovky (Next.js App Router) – jen skládají UI, žádná pravidla
-  ui/         sdílené komponenty vzhledu (rám aplikace, navigace, prázdný stav…)
-  domain/     čistá doménová pravidla v TypeScriptu – bez Reactu, Next.js a databáze
-  server/db/  databázové schéma a připojení (PGlite + Drizzle)
-  lib/        technické pomůcky bez obchodního významu (navigace, nastavení Codespaces)
-tests/
-  architecture/  testy hlídající hranice vrstev
-drizzle/      SQL migrace (návrh, zatím neaplikované)
-docs/         technická dokumentace
+  app/            obrazovky a serverové akce (Next.js) – nepřistupují k databázi přímo
+  ui/             sdílené komponenty (formuláře, odznaky, rám aplikace)
+  domain/         čistá pravidla: oprávnění, termíny událostí, kalendář (svátky, Europe/Prague)
+  server/
+    app.ts        vstup pro obrazovky: služby s připojenou databází
+    services/     případy užití: oprávnění + transakce + historie + kontrola verze
+    identity/     fiktivní vývojová identita (později skutečné přihlášení)
+    db/           schéma, připojení, migrace, pravidla schématu
+    seed/         fiktivní data
+  lib/            technické pomůcky
+drizzle/          SQL migrace (0000 tabulky, 0001 ochrany)
+scripts/          db:setup / db:reset / db:migrate
+e2e/              testy v prohlížeči
+tests/            architektonické testy
+data/             vývojová a testovací databáze (NIKDY do Gitu)
+docs/             dokumentace
 ```
-
-Podrobnosti: [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
 
 ## Dokumentace
 
-- [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) – vrstvy, pravidla, plánovaná serverová část
-- [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický návrh vztahů (ne tabulky)
-- [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12 (schváleno)
-- [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 (schváleno s upřesněním)
-- [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – návrh první migrace (čeká na schválení, neaplikováno)
-- [docs/PREVZETI-Z-V1.md](docs/PREVZETI-Z-V1.md) – co lze převzít z V1 (`radekrosicky/cov-rizeni`, commit `b7168b6`)
+- [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) – vrstvy a pravidla
+- [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – tabulky, přístup uživatelů, migrace a její stav
+- [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 a rozhodnutí
+- [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12
+- [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický model celé aplikace
+- [docs/PREVZETI-Z-V1.md](docs/PREVZETI-Z-V1.md) – co se převzalo / lze převzít z V1
 
 ## Zásady
 

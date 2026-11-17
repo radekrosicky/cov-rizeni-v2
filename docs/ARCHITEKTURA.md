@@ -1,7 +1,10 @@
 # Technická architektura ČOV Řízení 2.0
 
-Stav: návrh k etapě V2-0. Vrstvy `app`, `ui`, `domain`, `lib` existují; vrstva `server` je zatím jen
-popsaná a vznikne až po schválení úložiště dat (viz [OTAZKY-PRED-DATABAZI.md](OTAZKY-PRED-DATABAZI.md)).
+Stav: etapa V2-1. Všechny vrstvy existují včetně `server` (databáze PGlite + Drizzle, služby, vývojová identita).
+
+Konvence importů: `src/domain` a `src/server` používají **relativní importy s příponou `.ts`**, aby šly
+databázové skripty spouštět přímo v Node.js (bez další knihovny). Obrazovky (`src/app`, `src/ui`) používají `@/…`
+a k serveru přistupují jen přes `src/server/app.ts` a `src/server/identity/session.ts` (hlídá lint).
 
 ## Proč Next.js + TypeScript
 
@@ -19,7 +22,7 @@ Konkrétní důvod zvolit něco jiného jsme nenašli.
    │
    ├──► src/ui        prezentační komponenty (React, Tailwind), bez obchodních pravidel
    │
-   └──► src/server    [ZATÍM NEEXISTUJE] aplikační služby: přihlášený uživatel, oprávnění,
+   └──► src/server    aplikační služby: přihlášený uživatel, oprávnění,
           │           transakce, zápis historie, úložiště souborů
           │
           ├──► src/domain   čistá pravidla (výpočty termínů, stavy, odvozené přehledy)

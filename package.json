@@ -14,10 +14,14 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build",
     "db:generate": "drizzle-kit generate",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "db:setup": "node scripts/db-setup.ts",
+    "db:reset": "node scripts/db-setup.ts --reset",
+    "db:migrate": "node scripts/db-migrate.ts",
+    "test:e2e": "playwright test --trace off"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.18.0"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.16",

@@ -1,8 +1,8 @@
 # Databáze V2-1 – návrh první migrace ke schválení
 
-> **Stav: NÁVRH. Migrace NENÍ aplikovaná** na žádnou trvalou databázi (složka `data/` neexistuje,
-> příkaz pro aplikaci migrace zatím v projektu není). Pouze automatické testy ji spouští na **dočasné
-> databázi v paměti**, která po testu zaniká – tak se ověřuje, že SQL je platné a pravidla fungují.
+> **Stav: SCHVÁLENO a APLIKOVÁNO (17. 11. 2026) na prázdnou vývojovou databázi V2** (`data/dev/db`, mimo Git)
+> s fiktivními daty. Před prvním použitím byla migrace upravena podle upřesnění vlastníka (kap. 2a).
+> Od této chvíle se migrace 0000 a 0001 nemění; další změny schématu = nové migrace se schválením.
 
 ## 1. Soubory
 
@@ -36,6 +36,14 @@ erDiagram
 
 Společné: `version` u upravitelných tabulek (ochrana souběžných úprav, Q8), autor a čas vytvoření/změny,
 všechny cizí klíče `ON DELETE RESTRICT` (nic nezmizí „kaskádou“; mazání jen podle pravidel Q9).
+
+### 2a. Upřesnění při schválení (zapracováno před prvním použitím)
+- **Vedoucím zakázky nesmí být sledující.** Databáze to hlídá při založení zakázky, při změně vedoucího
+  i při změně globální role uživatele, který nějakou zakázku vede (`drizzle/0001_v2_1_ochrany.sql`).
+  Založení zakázky a zápis vedoucího mezi členy s úpravami proběhne v jedné transakci.
+- **Pravidlo jednoho zdroje termínů hlídá jen kopie termínů událostí a milníků** (`src/server/db/schemaRules.ts`).
+  Samostatné termíny objednávek, dodávek materiálu, úkolů nebo datum dokumentu jsou povolené – ověřeno testy
+  i na ukázkové budoucí tabulce materiálu.
 
 ### Změna oproti plánu (podle vašeho rozhodnutí)
 - **Zrušeno** pravidlo „každý typ události jen jednou“. Typ je jen výchozí nabídka; název je vlastní
@@ -71,8 +79,8 @@ Skutečný přístup = **globální role** × **členství v zakázce**. Rozhodu
 - **Na V1: žádný.** Jiný repozitář, jiná databáze.
 - **Vratnost:** vývojová databáze bude ve složce `data/` (mimo Git) – při chybě ji lze smazat a vytvořit znovu.
   Po schválení se tato migrace už nebude přepisovat; další změny = nové migrace.
-- **Co se stane po schválení:** přidám příkaz `npm run db:migrate` a seed fiktivních dat a migraci aplikuji
-  na vývojovou databázi v Codespaces. Pak pokračuji službami, vývojovou identitou a obrazovkami.
+- **Jak se aplikuje:** `npm run db:setup` (jen na prázdnou databázi; existující nepřepíše), v Codespaces automaticky
+  při vytvoření prostředí. Testy používají dočasnou databázi v paměti, testy v prohlížeči samostatnou `data/e2e`.
 
 ## 5. Ověření (automatické testy)
 

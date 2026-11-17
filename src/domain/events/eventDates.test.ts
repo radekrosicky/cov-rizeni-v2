@@ -53,3 +53,20 @@ describe("validateEventDateChange", () => {
     expect(validateEventDateChange({ before: d(null, "2027-01-05", null), after: d(null, "2027-02-05", null), today: TODAY, reason: null })).toEqual([]);
   });
 });
+
+describe("nearestOpenEvent / sortEvents", () => {
+  const ev = (id: string, title: string, dates: EventDates, status: "active" | "cancelled" = "active") => ({ id, title, status, ...dates });
+  it("vybere nejbližší nenastalou aktivní událost; bez termínu až nakonec", async () => {
+    const { nearestOpenEvent } = await import("./eventDates.ts");
+    const events = [
+      ev("a", "Předání staveniště", d(null, null, "2026-10-05")),
+      ev("b", "Montáž – linka 2", d(null, "2027-05-10", null)),
+      ev("c", "Montáž – linka 1", d("2027-03-31", "2027-03-01", null)),
+      ev("d", "Zkušební provoz", d(null, null, null)),
+      ev("e", "Zrušená", d(null, "2026-12-01", null), "cancelled"),
+    ];
+    expect(nearestOpenEvent(events)?.id).toBe("c");
+    expect(nearestOpenEvent([events[3]!])?.id).toBe("d");
+    expect(nearestOpenEvent([events[0]!])).toBeNull();
+  });
+});

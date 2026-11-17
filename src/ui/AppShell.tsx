@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { MainNav } from "./MainNav";
 
-/** Rám aplikace: navigace + obsah. Upozornění na vývojovou verzi je vždy viditelné. */
-export function AppShell({ children }: { children: ReactNode }) {
+/** Rám aplikace: navigace + pruh s identitou + obsah. */
+export function AppShell({ children, topBar }: { children: ReactNode; topBar: ReactNode }) {
   return (
     <div className="min-h-screen md:flex">
       <aside className="bg-nav text-slate-200 md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0">
@@ -13,19 +13,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <MainNav />
       </aside>
       <div className="min-w-0 flex-1">
-        <DevNotice />
+        {topBar}
         <main className="mx-auto w-full max-w-4xl px-4 py-5 md:px-8 md:py-8">{children}</main>
       </div>
-    </div>
-  );
-}
-
-/** Pravdivé označení stavu: vývojová verze, pouze fiktivní data, žádné přihlášení. */
-export function DevNotice() {
-  return (
-    <div role="note" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 md:px-8">
-      <strong className="font-semibold">Vývojová verze V2-0.</strong> Pouze technický základ – bez přihlášení a bez ukládání dat.
-      Nevkládejte skutečné firemní údaje.
     </div>
   );
 }

@@ -15,7 +15,8 @@
 - Nikdy necommituj přímo do `main`; pracovní větev + pull request.
 - Pouze fiktivní data. Žádné skutečné firemní údaje, jména ani smlouvy.
 - Žádné placené služby ani placená AI API. Nová závislost = zdůvodnit a nechat schválit.
-- Databázové tabulky a migrace až po schválení `docs/OTAZKY-PRED-DATABAZI.md`.
+- Nová migrace = předložit ke schválení před aplikací. Schválené migrace (`drizzle/0000`, `0001`) neměnit.
+- `npm run db:reset` jen s vypnutou aplikací; maže jen vývojovou databázi v `data/`.
 - Nepředstírej neexistující funkce. Žádné falešné přihlášení vydávané za zabezpečení.
 - Neměň repozitář V1 (`radekrosicky/cov-rizeni`).
 
@@ -24,5 +25,8 @@
 - Next.js (App Router) + TypeScript strict + Tailwind CSS 4 + Vitest + ESLint.
 - Vrstvy: `src/app` (obrazovky) → `src/ui` (komponenty) → `src/domain` (čistá pravidla).
   `src/domain` nesmí importovat React, Next.js, Node API ani databázi (hlídá lint i test).
+- `src/server/services`: každá změna = oprávnění (doména) + jedna transakce + historie + kontrola `version`.
+- Obrazovky nevolají databázi přímo – jen `src/server/app.ts` (hlídá lint).
+- V `src/domain` a `src/server` relativní importy s příponou `.ts` (skripty běží přímo v Node.js).
 - UI česky, identifikátory v kódu anglicky, komentáře česky.
-- Před odevzdáním: `npm run check` (typy, lint, testy, build) musí projít.
+- Před odevzdáním: `npm run check` a `npm run test:e2e` musí projít.

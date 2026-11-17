@@ -78,3 +78,18 @@ describe("oprávnění – deaktivovaný účet", () => {
     expect(canGlobal(a, "project.create").allowed).toBe(false);
   });
 });
+
+describe("vedoucí a přidělitelný přístup", () => {
+  it("vedoucím smí být jen aktivní správce nebo zástupce", async () => {
+    const { canBeLeader } = await import("./permissions.ts");
+    expect(canBeLeader("admin", "active")).toBe(true);
+    expect(canBeLeader("deputy", "active")).toBe(true);
+    expect(canBeLeader("viewer", "active")).toBe(false);
+    expect(canBeLeader("deputy", "deactivated")).toBe(false);
+  });
+  it("sledujícímu lze přidělit jen čtení", async () => {
+    const { assignableAccess } = await import("./permissions.ts");
+    expect(assignableAccess("viewer")).toEqual(["read"]);
+    expect(assignableAccess("deputy")).toEqual(["edit", "read"]);
+  });
+});

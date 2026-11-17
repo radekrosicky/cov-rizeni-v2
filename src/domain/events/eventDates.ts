@@ -61,3 +61,31 @@ export function validateEventDateChange(c: EventDateChange): EventDateIssue[] {
   }
   return issues;
 }
+
+export interface DatedEvent extends EventDates {
+  id: string;
+  title: string;
+  status: "active" | "cancelled";
+}
+
+/**
+ * Nejbližší dosud nenastalá událost (aktivní, bez skutečného data), seřazená podle plánu,
+ * jinak smluvního termínu. Události bez termínu jsou až na konci („čeká na ověření“).
+ */
+export function nearestOpenEvent<T extends DatedEvent>(events: readonly T[]): T | null {
+  const open = events.filter((e) => e.status === "active" && e.actualDate === null);
+  const sorted = sortEvents(open);
+  return sorted[0] ?? null;
+}
+
+/** Řazení událostí podle rozhodujícího data; bez data na konci, pak podle názvu. */
+export function sortEvents<T extends DatedEvent>(events: readonly T[]): T[] {
+  return [...events].sort((a, b) => {
+    const da = eventDateView(a).date;
+    const db = eventDateView(b).date;
+    if (da === db) return a.title.localeCompare(b.title, "cs");
+    if (da === null) return 1;
+    if (db === null) return -1;
+    return da < db ? -1 : 1;
+  });
+}

@@ -1,0 +1,39 @@
+// Založení VÝVOJOVÉ databáze V2: prázdná databáze → migrace → fiktivní data.
+// Použití:
+//   npm run db:setup                 založí databázi; pokud už existuje, skončí chybou (nic nepřepíše)
+//   npm run db:setup -- --if-missing založí jen, když neexistuje (Codespaces při vytvoření)
+//   npm run db:reset                 smaže vývojovou databázi a založí ji znovu s fiktivními daty
+// Databáze leží jen ve složce data/ (mimo Git). Aplikace při tom nesmí běžet.
+import fs from "node:fs";
+import { openDb, resolveDatabaseDir } from "../src/server/db/client.ts";
+import { applyMigrations } from "../src/server/db/migrate.ts";
+import { seedDevData } from "../src/server/seed/devSeed.ts";
+
+const args = new Set(process.argv.slice(2));
+const dir = resolveDatabaseDir();
+const exists = fs.existsSync(dir) && fs.readdirSync(dir).length > 0;
+
+if (exists) {
+  if (args.has("--if-missing")) {
+    console.log(`Vývojová databáze už existuje (${dir}) – nic neměním.`);
+    process.exit(0);
+  }
+  if (!args.has("--reset")) {
+    console.error(`Vývojová databáze už existuje (${dir}). Nic jsem nezměnil.\nPro nové založení s fiktivními daty: npm run db:reset`);
+    process.exit(1);
+  }
+  fs.rmSync(dir, { recursive: true, force: true });
+  console.log(`Smazána vývojová databáze ${dir}.`);
+}
+
+fs.mkdirSync(dir, { recursive: true });
+const { db, client } = openDb(dir);
+try {
+  await applyMigrations(db);
+  console.log("Migrace aplikovány na prázdnou databázi.");
+  const seeded = await seedDevData(db);
+  console.log(`Fiktivní data: ${seeded.users.length} uživatelé, ${seeded.projects.length} zakázky.`);
+} finally {
+  await client.close();
+}
+console.log(`Hotovo: ${dir}`);

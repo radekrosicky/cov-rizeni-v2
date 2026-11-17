@@ -84,3 +84,13 @@ export const DENY_MESSAGES: Record<DenyReason, string> = {
   admin_only: "Tuto akci smí provést jen správce.",
   archived: "Zakázka je archivovaná – nejprve ji musí správce obnovit.",
 };
+
+/** Vedoucím zakázky smí být jen správce nebo zástupce (sledující má jen čtení) – hlídá i databáze. */
+export function canBeLeader(role: GlobalRole, status: UserStatus): boolean {
+  return status === "active" && (role === "admin" || role === "deputy");
+}
+
+/** Jaký přístup k zakázce lze uživateli přidělit: sledujícímu jen čtení. */
+export function assignableAccess(role: GlobalRole): readonly MemberAccess[] {
+  return role === "viewer" ? ["read"] : ["edit", "read"];
+}

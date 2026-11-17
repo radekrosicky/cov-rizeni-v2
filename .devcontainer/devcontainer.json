@@ -4,7 +4,7 @@
   "name": "ČOV Řízení 2.0 (Node.js 22)",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:4-22-bookworm",
   "hostRequirements": { "cpus": 2 },
-  "postCreateCommand": "npm ci",
+  "postCreateCommand": "npm ci && npm run db:setup -- --if-missing",
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": { "label": "ČOV Řízení 2.0", "onAutoForward": "openBrowser" }

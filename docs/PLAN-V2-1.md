@@ -200,13 +200,17 @@ Vše použitelné na mobilu bez vodorovného posouvání; hlavní tlačítka ≥
 
 Data vývojové databáze: složka `data/` (v `.gitignore`, nikdy do Gitu).
 
-## 10. Postup a zastavení
+## 10. Postup – stav
 
-1. Závislosti, databázový adaptér, převzetí kalendáře z V1, Drizzle schéma v TypeScriptu.
-2. **STOP – předložím vygenerovanou první migraci (SQL) ke schválení.** Bez souhlasu se nepoužije.
-3. Doménová pravidla a služby s testy.
-4. Vývojová identita + seed fiktivních dat.
-5. Obrazovky, end-to-end testy, `npm run check`, odeslání větve, pull request.
+1. ✅ Závislosti, databázový adaptér, převzetí kalendáře z V1, Drizzle schéma.
+2. ✅ Návrh migrace předložen a schválen s upřesněním; upřesnění zapracováno a otestováno před prvním použitím.
+3. ✅ Migrace aplikována na prázdnou vývojovou databázi s fiktivními daty.
+4. ✅ Doménová pravidla a služby s testy; vývojová identita; fiktivní data.
+5. ✅ Obrazovky, testy v prohlížeči, `npm run check`.
+6. ⏸ Zastaveno před V2-2 – čeká na souhlas vlastníka.
+
+Mimo plán zatím neřešeno: změna globální role uživatele z obrazovky (role jsou dány fiktivními daty;
+správa uživatelů přijde se skutečným přihlášením).
 
 ## 11. Co zůstává na později
 

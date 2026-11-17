@@ -17,6 +17,8 @@ data/
 .env
 .env.*
 !.env.example
+# Neobsahuje tajné údaje – jen zapíná fiktivní identity ve vývojovém serveru
+!.env.development
 
 # Systém / editor
 .DS_Store

@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   agentRules: false,
   // Vývojová ikonka Next.js v rohu stránky překrývá obsah na mobilu.
   devIndicators: false,
+  // Databáze PGlite se nesmí „balit“ do aplikace – načítá se přímo z node_modules.
+  serverExternalPackages: ["@electric-sql/pglite"],
   // Vývojový server smí obsloužit stránku otevřenou přes přesměrovaný port GitHub Codespaces.
   // Mimo Codespaces je seznam prázdný (žádné výjimky). Port zůstává SOUKROMÝ.
   allowedDevOrigins: codespacesDevOrigins(process.env),

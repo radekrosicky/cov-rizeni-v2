@@ -19,7 +19,7 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 | GitHub Codespaces (`.devcontainer`) a automatická kontrola (GitHub Actions) | ✅ připraveno |
 | Zakázky, materiál, připravenost, úkoly, dokumenty, KD | ⛔ zatím neexistuje |
 | Přihlášení a oprávnění | ⛔ zatím neexistuje (záměrně nic nepředstíráme) |
-| Databáze a ukládání souborů | ⛔ rozhodnuto (Q1–Q12), plán V2-1 čeká na schválení – viz [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) |
+| Databáze a ukládání souborů | 🟡 schéma a návrh migrace hotové, **neaplikováno** – čeká na schválení, viz [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) |
 
 ## Spuštění v GitHub Codespaces
 
@@ -58,6 +58,8 @@ Aplikace poběží na <http://localhost:3000>.
 | `npm test` | automatické testy (Vitest) |
 | `npm run build` | produkční sestavení |
 | `npm run check` | vše výše najednou (typy → lint → testy → build) |
+| `npm run db:check` | kontrola konzistence migrací (nic neaplikuje) |
+| `npm run db:generate` | vygeneruje novou migraci ze schématu (nic neaplikuje) |
 
 ## Struktura projektu
 
@@ -66,9 +68,11 @@ src/
   app/        obrazovky (Next.js App Router) – jen skládají UI, žádná pravidla
   ui/         sdílené komponenty vzhledu (rám aplikace, navigace, prázdný stav…)
   domain/     čistá doménová pravidla v TypeScriptu – bez Reactu, Next.js a databáze
+  server/db/  databázové schéma a připojení (PGlite + Drizzle)
   lib/        technické pomůcky bez obchodního významu (navigace, nastavení Codespaces)
 tests/
   architecture/  testy hlídající hranice vrstev
+drizzle/      SQL migrace (návrh, zatím neaplikované)
 docs/         technická dokumentace
 ```
 
@@ -79,7 +83,8 @@ Podrobnosti: [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
 - [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) – vrstvy, pravidla, plánovaná serverová část
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický návrh vztahů (ne tabulky)
 - [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12 (schváleno)
-- [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 (návrh ke schválení)
+- [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 (schváleno s upřesněním)
+- [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – návrh první migrace (čeká na schválení, neaplikováno)
 - [docs/PREVZETI-Z-V1.md](docs/PREVZETI-Z-V1.md) – co lze převzít z V1 (`radekrosicky/cov-rizeni`, commit `b7168b6`)
 
 ## Zásady

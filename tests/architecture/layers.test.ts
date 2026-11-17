@@ -15,7 +15,7 @@ function listTs(dir: string): string[] {
   });
 }
 
-const FORBIDDEN = [/^react/, /^next/, /^node:/, /^@\/(app|ui|server)\//, /\/(app|ui|server)\//];
+const FORBIDDEN = [/^react/, /^next/, /^node:/, /^drizzle-orm/, /^@electric-sql\//, /^@\/(app|ui|server)\//, /\/(app|ui|server)\//];
 const IMPORT_RE = /(?:import|export)\s[^"']*?from\s+["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']\s*\)/g;
 
 describe("architektura – čistá doména", () => {

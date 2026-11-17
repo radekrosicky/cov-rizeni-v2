@@ -1,6 +1,7 @@
 # Plán etapy V2-1 – zakázka, uživatelé, oprávnění, události a milníky
 
-> **Stav: NÁVRH KE SCHVÁLENÍ.** Zatím nevznikla žádná tabulka, migrace ani kód.
+> **Stav: SCHVÁLENO s upřesněním (17. 11. 2026).** Upřesnění jsou zapracovaná níže a ve schématu;
+> podrobný návrh první migrace je v [DATABAZE-V2-1.md](DATABAZE-V2-1.md).
 > Vychází z Master zadání v1.0 a rozhodnutí Q1–Q12 ([OTAZKY-PRED-DATABAZI.md](OTAZKY-PRED-DATABAZI.md)).
 
 ## 1. Cíl etapy
@@ -26,7 +27,7 @@ Pět tabulek. Typy: `uuid` (generuje server), `date` = den bez času (`RRRR-MM-D
 | `id` | uuid PK | |
 | `email` | text, unikátní (malými písmeny) | u vývojových identit fiktivní `…@example.test` |
 | `display_name` | text | |
-| `global_role` | `admin` \| `member` | `admin` = správce (všechna oprávnění) |
+| `global_role` | `admin` \| `deputy` \| `viewer` | správce / zástupce / sledující; výchozí sledující (upřesněno při návrhu schématu) |
 | `is_dev_identity` | boolean | `true` = fiktivní vývojová identita; v produkci se s ní **nelze** přihlásit |
 | `status` | `active` \| `deactivated` | uživatel se nemaže, jen deaktivuje |
 | `version`, časové a autorské údaje | | |
@@ -110,8 +111,9 @@ erDiagram
    vlastní kopii data události. Budoucí moduly (materiál, připravenost) budou mít jen odkaz `event_id` + posun dní.
 2. **Strážní test schématu:** automatický test projde všechny tabulky a sloupce typu `date`; povolené jsou jen ty
    na seznamu (s odůvodněním). Nový datový sloupec mimo seznam = test selže → vědomé rozhodnutí místo omylu.
-3. **Typová událost jen jednou:** unikátní index `(project_id, kind)` pro aktivní události kromě `other`.
-   Druhé „Předání staveniště“ v téže zakázce databáze nepřijme. U `other` aplikace upozorní na stejný název.
+3. **Každá událost je samostatná:** vlastní id, vlastní název a vlastní smluvní / plánované / skutečné datum
+   (všechna nepovinná). **Více událostí stejného typu v jedné zakázce je povoleno** (např. montáž linky 1 a 2) –
+   rozhodnutí vlastníka. Budoucí materiál a připravenost odkazují na konkrétní `events.id`, nikdy na typ.
 4. **Milník není kopie:** jen příznak `is_milestone` na téže události.
 5. **Tři druhy data v jedné události, nikdy se nezaměňují.** Doménová funkce vrací datum **i jeho původ**:
    „skutečně 3. 3. 2027“ / „plán 3. 3. 2027 (zatím nenastalo)“ / „smluvně do …“ / „**čeká na ověření**“ (žádné datum).
@@ -146,9 +148,9 @@ erDiagram
 | Akce | Správce | Člen s `edit` (zástupce) | Člen s `read` (sledující) | Bez členství |
 |---|---|---|---|---|
 | Vidět zakázku, události, historii | ✅ | ✅ | ✅ | ❌ (jako by neexistovala) |
-| Založit zakázku | ✅ | ❓ návrh: ✅ (stane se členem s `edit`) | ❌ | ❌ |
+| Založit zakázku | ✅ | ✅ (stane se členem s `edit`) | ❌ | ❌ |
 | Upravit zakázku, události, zapsat skutečné datum | ✅ | ✅ | ❌ | ❌ |
-| Archivovat zakázku (s důvodem) | ✅ | ❓ návrh: ❌ | ❌ | ❌ |
+| Archivovat zakázku (s důvodem) | ✅ | ❌ | ❌ | ❌ |
 | Přidávat / odebírat členy, měnit role | ✅ | ❌ (Q11) | ❌ | ❌ |
 | Fyzické smazání | jen správce, v V2-1 se neprogramuje | ❌ | ❌ | ❌ |
 
@@ -213,10 +215,10 @@ rozhodnutí), správa uživatelů v aplikaci, cena díla a finance, materiál, r
 dokumenty a úložiště souborů, KD a změny, obsah „Co dnes řešit“, fyzické mazání správcem, export ZIP/CSV,
 zálohy a obnova, ostrý hosting.
 
-## 12. Otázky k potvrzení
+## 12. Rozhodnutí vlastníka (17. 11. 2026)
 
-1. Smí **zástupce zakládat** nové zakázky? (Návrh: ano, automaticky s přístupem `edit`.)
-2. Smí zakázku **archivovat** jen správce? (Návrh: ano.)
-3. Souhlasí **seznam typů událostí** v kap. 2? Chybí některá typická událost?
-4. Musí být **vedoucí zakázky** vždy i jejím členem s `edit`? (Návrh: ano, automaticky.)
-5. Schvalujete **nové závislosti** v kap. 9?
+1. Zástupce **smí zakládat** zakázky a automaticky k nim získá přístup `edit`.
+2. Archivovat smí **jen správce**.
+3. Typy událostí jsou **výchozí nabídka**; vlastní název je možný a **více událostí stejného typu** v zakázce je povoleno.
+4. Vedoucí je **automaticky členem s `edit`** (vynucuje databáze).
+5. Závislosti schváleny po kontrole kompatibility, licencí a bezpečnosti (viz [DATABAZE-V2-1.md](DATABAZE-V2-1.md), kap. 6).

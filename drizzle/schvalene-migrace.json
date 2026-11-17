@@ -1,0 +1,4 @@
+{
+  "_poznamka": "Migrace schválené vlastníkem projektu. Skripty npm run db:setup / db:migrate jiné NEAPLIKUJÍ. Nová migrace se sem přidá až po schválení.",
+  "schvalene": ["0000_v2_1_zaklad", "0001_v2_1_ochrany"]
+}

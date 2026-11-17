@@ -62,7 +62,7 @@ export const EVENT_KIND_LABELS: Record<EventKind, string> = {
 export const EVENT_STATUSES = ["active", "cancelled"] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
-export const HISTORY_ENTITY_TYPES = ["user", "project", "project_member", "event"] as const;
+export const HISTORY_ENTITY_TYPES = ["user", "project", "project_member", "event", "document", "document_revision"] as const;
 export type HistoryEntityType = (typeof HISTORY_ENTITY_TYPES)[number];
 
 export const HISTORY_ACTIONS = [
@@ -76,5 +76,40 @@ export const HISTORY_ACTIONS = [
   "member_remove",
   "member_change",
   "role_change",
+  "upload_revision",
+  "set_current_revision",
 ] as const;
 export type HistoryAction = (typeof HISTORY_ACTIONS)[number];
+
+// ---------- Dokumenty (V2-2) ----------
+
+/** Druhy dokumentů (Master zadání 5.7). Dodatek smlouvy = samostatný dokument druhu „contract“. */
+export const DOCUMENT_CATEGORIES = [
+  "contract",
+  "budget",
+  "design",
+  "site_meeting",
+  "diary_export",
+  "protocol",
+  "photo",
+  "other",
+] as const;
+export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
+export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
+  contract: "Smlouvy a dodatky",
+  budget: "Rozpočty",
+  design: "Projektová dokumentace a výkresy",
+  site_meeting: "Zápisy z kontrolních dnů",
+  diary_export: "Export stavebního deníku",
+  protocol: "Protokoly a revize",
+  photo: "Fotografie",
+  other: "Ostatní",
+};
+
+export const DOCUMENT_STATUSES = ["active", "archived"] as const;
+export type DocumentStatus = (typeof DOCUMENT_STATUSES)[number];
+
+/** Povolené druhy souborů – seznam povolených (ne zakázaných). Typ se ověřuje podle OBSAHU souboru.
+ *  ZIP a jiné archivy nejsou povolené (schváleno k plánu V2-2). */
+export const FILE_KINDS = ["pdf", "xlsx", "docx", "jpeg", "png", "webp", "heic", "tiff", "dwg", "dxf"] as const;
+export type FileKind = (typeof FILE_KINDS)[number];

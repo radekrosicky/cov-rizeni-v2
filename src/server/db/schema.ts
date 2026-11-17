@@ -10,9 +10,12 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  bigint,
   boolean,
   check,
   date,
+  foreignKey,
+  unique,
   index,
   integer,
   jsonb,
@@ -25,7 +28,10 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  DOCUMENT_CATEGORIES,
+  DOCUMENT_STATUSES,
   EVENT_KINDS,
+  FILE_KINDS,
   EVENT_STATUSES,
   GLOBAL_ROLES,
   HISTORY_ACTIONS,
@@ -241,8 +247,114 @@ export const historyEntries = pgTable(
   ],
 );
 
+// ---------- documents (dokumenty zakázky, V2-2) ----------
+// Dokument = logická věc (např. „D.1.3 Technologie – dispozice“); soubory jsou v document_revisions.
+// Aktuální revize = JEDINÝ ukazatel current_revision_id; „nahrazeno“ se odvozuje (revize ≠ aktuální).
+
+export const documents = pgTable(
+  "documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "restrict" }),
+    category: text("category", { enum: DOCUMENT_CATEGORIES }).notNull(),
+    title: text("title").notNull(),
+    note: text("note"),
+    /** Aktuální revize; musí patřit témuž dokumentu (složený cizí klíč níže). Prázdná jen uvnitř transakce založení. */
+    currentRevisionId: uuid("current_revision_id"),
+    status: text("status", { enum: DOCUMENT_STATUSES }).notNull().default("active"),
+    archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+    archivedBy: uuid("archived_by").references(() => users.id, { onDelete: "restrict" }),
+    archiveReason: text("archive_reason"),
+    version: integer("version").notNull().default(1),
+    createdAt: stampedAt("created_at"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    updatedAt: stampedAt("updated_at"),
+    updatedBy: uuid("updated_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+  },
+  (t) => [
+    index("documents_project_category_idx").on(t.projectId, t.category),
+    // Aktuální revize musí patřit TÉMUŽ dokumentu – nelze ukázat na revizi cizího dokumentu.
+    foreignKey({
+      name: "documents_current_revision_same_document_fk",
+      columns: [t.id, t.currentRevisionId],
+      foreignColumns: [documentRevisions.documentId, documentRevisions.id],
+    }).onDelete("restrict"),
+    check("documents_category_valid", inList(t.category, DOCUMENT_CATEGORIES)),
+    check("documents_title_not_blank", notBlank(t.title)),
+    check("documents_status_valid", inList(t.status, DOCUMENT_STATUSES)),
+    check(
+      "documents_archive_consistent",
+      sql`(${t.status} = 'archived' and ${t.archivedAt} is not null and ${t.archivedBy} is not null
+           and ${t.archiveReason} is not null and length(btrim(${t.archiveReason})) > 0)
+       or (${t.status} <> 'archived' and ${t.archivedAt} is null and ${t.archivedBy} is null and ${t.archiveReason} is null)`,
+    ),
+    check("documents_version_positive", sql`${t.version} >= 1`),
+  ],
+);
+
+// ---------- document_revisions (revize = konkrétní nahraný soubor) ----------
+// Neměnné: úpravu ani smazání odmítne databázový trigger (ruční část migrace 0002).
+// Soubor leží v úložišti (FileStorage) pod klíčem, který generuje server – nikdy jméno od uživatele.
+
+export const documentRevisions = pgTable(
+  "document_revisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    documentId: uuid("document_id")
+      .notNull()
+      .references((): AnyPgColumn => documents.id, { onDelete: "restrict" }),
+    /** Pořadové číslo 1, 2, 3… v rámci dokumentu. */
+    revisionNo: integer("revision_no").notNull(),
+    /** Nepovinné vlastní označení („C“, „Rev. 2“). */
+    revisionLabel: text("revision_label"),
+    /** Datum dokumentu (např. podpisu, vydání výkresu) – samostatný údaj dokumentu, ne termín události. */
+    documentDate: date("document_date", { mode: "string" }),
+    /** Původní název souboru – jen pro zobrazení a stažení. */
+    originalFilename: text("original_filename").notNull(),
+    /** Druh souboru zjištěný z OBSAHU (ne z přípony ani z údaje prohlížeče). */
+    fileKind: text("file_kind", { enum: FILE_KINDS }).notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    /** Otisk SHA-256 (64 hex znaků) – kontrola celistvosti. */
+    sha256: text("sha256").notNull(),
+    /** Klíč v úložišti; jedinečný → existující soubor nelze přepsat jinou revizí. */
+    storageKey: text("storage_key").notNull(),
+    note: text("note"),
+    uploadedAt: stampedAt("uploaded_at"),
+    uploadedBy: uuid("uploaded_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+  },
+  (t) => [
+    unique("document_revisions_document_id_id_unique").on(t.documentId, t.id),
+    unique("document_revisions_no_unique").on(t.documentId, t.revisionNo),
+    uniqueIndex("document_revisions_storage_key_unique").on(t.storageKey),
+    check("document_revisions_no_positive", sql`${t.revisionNo} >= 1`),
+    check("document_revisions_label_not_blank", sql`${t.revisionLabel} is null or length(btrim(${t.revisionLabel})) > 0`),
+    check(
+      "document_revisions_filename_valid",
+      // 1–255 znaků, bez lomítka, zpětného lomítka (chr 92) a řídicích znaků – název nesmí vypadat jako cesta.
+      sql`length(btrim(${t.originalFilename})) between 1 and 255 and strpos(${t.originalFilename}, '/') = 0
+          and strpos(${t.originalFilename}, chr(92)) = 0 and ${t.originalFilename} !~ '[[:cntrl:]]'`,
+    ),
+    check("document_revisions_file_kind_valid", inList(t.fileKind, FILE_KINDS)),
+    // Horní mez je jen pojistka databáze; skutečný limit (výchozí 50 MB) je nastavitelný v aplikaci.
+    check("document_revisions_size_valid", sql`${t.sizeBytes} > 0 and ${t.sizeBytes} <= 1073741824`),
+    check("document_revisions_sha256_format", sql`${t.sha256} ~ '^[0-9a-f]{64}$'`),
+    // Klíč bez „..“, bez lomítka na začátku a jen z bezpečných znaků.
+    check("document_revisions_storage_key_safe", sql`${t.storageKey} ~ '^[a-z0-9][a-z0-9/_-]*$' and position('..' in ${t.storageKey}) = 0`),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type ProjectMember = typeof projectMembers.$inferSelect;
 export type ProjectEvent = typeof events.$inferSelect;
 export type HistoryEntry = typeof historyEntries.$inferSelect;
+export type Document = typeof documents.$inferSelect;
+export type DocumentRevision = typeof documentRevisions.$inferSelect;

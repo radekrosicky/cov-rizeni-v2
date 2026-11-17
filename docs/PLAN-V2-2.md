@@ -1,6 +1,7 @@
 # Plán etapy V2-2 – Dokumenty zakázky
 
-> **Stav: NÁVRH KE SCHVÁLENÍ.** Zatím nevznikl žádný kód, tabulka ani migrace.
+> **Stav: SCHVÁLENO s upřesněním (17. 11. 2026).** Návrh migrace 0002 čeká na schválení – viz
+> [DATABAZE-V2-2.md](DATABAZE-V2-2.md). Upřesnění níže mají přednost před původním textem.
 > Vychází z Master zadání v1.0 (kap. 5.6, 5.7, 8, 11 – scénáře S1, S9), rozhodnutí Q1–Q12
 > a funkční V2-1 (větev `v2-1-zakazka-opravneni`, commit `dfc4f46`).
 > Zakázky, termíny, role a oprávnění z V2-1 se nemění.
@@ -157,9 +158,14 @@ Před odevzdáním: `npm run check` a `npm run test:e2e`.
 - Fyzické mazání souborů správcem, antivirová kontrola, zabezpečené firemní úložiště, zálohy a obnova.
 - Skutečné přihlášení e-mailem a heslem (samostatná etapa).
 
-## 7. Otázky k potvrzení
+## 7. Rozhodnutí vlastníka (17. 11. 2026)
 
-1. **Dodatky smlouvy** jako samostatné dokumenty (ne revize smlouvy)? Návrh: ano.
-2. **Povolené typy souborů** podle kap. 3 – chybí nějaký běžný formát (např. ZIP s více výkresy)?
-3. Smí **zástupce** i správce označit starší revizi jako aktuální a archivovat dokument (vždy s důvodem)? Návrh: ano.
-4. Ponechat **limit 50 MB** na soubor i pro výkresy? Návrh: ano, nastavitelný.
+1. **Dodatky smlouvy = samostatné dokumenty.** Revize je jen nová verze téhož dokumentu.
+2. **Povolené typy:** PDF, XLSX, DOCX, JPG, PNG a další bezpečně ověřitelné obrázky (WEBP, HEIC, TIFF);
+   výkresy **DWG a DXF jen uložit a stáhnout** (bez vykreslování a interpretace). **ZIP nepovolen.**
+   Starší XLS/DOC, TXT a CSV z původního návrhu se nepovolují. Kontrola typu – viz DATABAZE-V2-2.md, kap. 4.
+3. Zástupce s právem úprav smí **označit jinou revizi jako aktuální a archivovat dokument** – vždy s důvodem a historií.
+4. **Limit 50 MB** na soubor ve vývoji, nastavitelný (`MAX_UPLOAD_MB`).
+5. Nahrávání ověřit i v Codespaces; zvolit bezpečný postup pro soubory do 50 MB (ne jen zvýšit limit) –
+   viz DATABAZE-V2-2.md, kap. 5 (samostatná adresa s průběžným zápisem místo serverové akce).
+6. Testovat malé soubory, soubory blízko limitu a odmítnutí souboru přes limit.

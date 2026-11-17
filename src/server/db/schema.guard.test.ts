@@ -9,16 +9,17 @@ import { checkDateColumn, checkSchemaDates, dateColumns } from "./schemaRules.ts
 const tables: PgTable[] = (Object.values(schema) as unknown[]).filter((v): v is PgTable => is(v, PgTable));
 
 describe("schéma V2-1 – jeden zdroj termínů událostí", () => {
-  it("načte všech 5 tabulek", () => {
-    expect(tables.length).toBe(5);
+  it("načte všech 7 tabulek", () => {
+    expect(tables.length).toBe(7);
   });
 
-  it("současné schéma pravidlo splňuje; termíny jsou jen v events", () => {
+  it("současné schéma pravidlo splňuje; termíny událostí jsou jen v events, datum dokumentu je samostatný údaj", () => {
     expect(checkSchemaDates(tables)).toEqual([]);
-    expect(dateColumns(tables)).toEqual([
+    expect(dateColumns(tables).sort((a, b) => (a.table + a.column).localeCompare(b.table + b.column))).toEqual([
+      { table: "document_revisions", column: "document_date" },
+      { table: "events", column: "actual_date" },
       { table: "events", column: "contract_date" },
       { table: "events", column: "planned_date" },
-      { table: "events", column: "actual_date" },
     ]);
   });
 

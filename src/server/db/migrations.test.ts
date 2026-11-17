@@ -64,11 +64,11 @@ afterEach(async () => {
 });
 
 describe("migrace – vznik schématu", () => {
-  it("na prázdné databázi vytvoří přesně 5 tabulek", async () => {
+  it("na prázdné databázi vytvoří přesně 7 tabulek (V2-1 + dokumenty V2-2)", async () => {
     const r = await db.execute<{ table_name: string }>(
       sql`select table_name from information_schema.tables where table_schema = 'public' order by table_name`,
     );
-    expect(r.rows.map((x) => x.table_name)).toEqual(["events", "history_entries", "project_members", "projects", "users"]);
+    expect(r.rows.map((x) => x.table_name)).toEqual(["document_revisions", "documents", "events", "history_entries", "project_members", "projects", "users"]);
   });
 });
 

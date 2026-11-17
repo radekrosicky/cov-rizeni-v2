@@ -15,6 +15,13 @@
       "when": 1794933290516,
       "tag": "0001_v2_1_ochrany",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794943455114,
+      "tag": "0002_v2_2_dokumenty",
+      "breakpoints": true
     }
   ]
 }

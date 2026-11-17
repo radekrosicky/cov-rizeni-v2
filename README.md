@@ -19,7 +19,7 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 | GitHub Codespaces (`.devcontainer`) a automatická kontrola (GitHub Actions) | ✅ připraveno |
 | Zakázky, materiál, připravenost, úkoly, dokumenty, KD | ⛔ zatím neexistuje |
 | Přihlášení a oprávnění | ⛔ zatím neexistuje (záměrně nic nepředstíráme) |
-| Databáze a ukládání souborů | ⛔ čeká na schválení – viz [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) |
+| Databáze a ukládání souborů | ⛔ rozhodnuto (Q1–Q12), plán V2-1 čeká na schválení – viz [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) |
 
 ## Spuštění v GitHub Codespaces
 
@@ -78,7 +78,8 @@ Podrobnosti: [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
 
 - [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) – vrstvy, pravidla, plánovaná serverová část
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický návrh vztahů (ne tabulky)
-- [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí potřebná před databází
+- [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12 (schváleno)
+- [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 (návrh ke schválení)
 - [docs/PREVZETI-Z-V1.md](docs/PREVZETI-Z-V1.md) – co lze převzít z V1 (`radekrosicky/cov-rizeni`, commit `b7168b6`)
 
 ## Zásady

@@ -1,0 +1,20 @@
+{
+  // GitHub Codespaces: spuštění bez instalace na vlastní počítač.
+  // Stačí nejmenší (bezplatný) stroj se 2 jádry. Port 3000 nechte SOUKROMÝ – nepřepínat na „Public“.
+  "name": "ČOV Řízení 2.0 (Node.js 22)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:4-22-bookworm",
+  "hostRequirements": { "cpus": 2 },
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "ČOV Řízení 2.0", "onAutoForward": "openBrowser" }
+  },
+  "containerEnv": { "NEXT_TELEMETRY_DISABLED": "1" },
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] },
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss", "vitest.explorer"],
+      "settings": { "files.autoSave": "afterDelay" }
+    }
+  }
+}

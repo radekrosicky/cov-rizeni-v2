@@ -19,6 +19,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -28,6 +29,8 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  BUDGET_IMPORT_STATUSES,
+  BUDGET_ROW_KINDS,
   DOCUMENT_CATEGORIES,
   DOCUMENT_STATUSES,
   EVENT_KINDS,
@@ -36,8 +39,12 @@ import {
   GLOBAL_ROLES,
   HISTORY_ACTIONS,
   HISTORY_ENTITY_TYPES,
+  MATERIAL_NEED_STATUSES,
   MEMBER_ACCESS,
   PROJECT_STATUSES,
+  QUANTITY_STATUSES,
+  TRACKING_REASONS,
+  VAT_BASES,
   PROJECT_TYPES,
   USER_STATUSES,
 } from "../../domain/values.ts";
@@ -351,6 +358,222 @@ export const documentRevisions = pgTable(
   ],
 );
 
+// ---------- budget_imports (import položkového rozpočtu, V2-3) ----------
+// Import se váže na KONKRÉTNÍ revizi dokumentu druhu „Rozpočty“ (XLSX, V2-2). Náhled se neukládá –
+// uloží se až potvrzený import i s nastavením sloupců. „Nahrazen novější revizí“ se odvozuje, neukládá.
+
+export interface BudgetColumnMapping {
+  sheetName: string;
+  headerRow: number | null;
+  firstDataRow: number;
+  /** Písmeno sloupce → význam (code, description, unit, quantity, unitPrice, totalPrice). */
+  columns: Partial<Record<"code" | "description" | "unit" | "quantity" | "unitPrice" | "totalPrice", string>>;
+}
+
+export const budgetImports = pgTable(
+  "budget_imports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "restrict" }),
+    /** Revize souboru (XLSX), ze které import vznikl. Musí patřit dokumentu druhu „Rozpočty“ téže zakázky (trigger). */
+    documentRevisionId: uuid("document_revision_id")
+      .notNull()
+      .references(() => documentRevisions.id, { onDelete: "restrict" }),
+    /** Potvrzené nastavení sloupců pro každý zvolený list. */
+    mapping: jsonb("mapping").$type<BudgetColumnMapping[]>().notNull(),
+    /** Měna cen – jen pokud ji uživatel potvrdil (jinak neznámá). */
+    currency: text("currency"),
+    /** Ceny s DPH / bez DPH – jen pokud potvrzeno (jinak neznámé). */
+    vatBasis: text("vat_basis", { enum: VAT_BASES }),
+    status: text("status", { enum: BUDGET_IMPORT_STATUSES }).notNull().default("active"),
+    voidedAt: timestamp("voided_at", { withTimezone: true, mode: "date" }),
+    voidedBy: uuid("voided_by").references(() => users.id, { onDelete: "restrict" }),
+    voidReason: text("void_reason"),
+    version: integer("version").notNull().default(1),
+    createdAt: stampedAt("created_at"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    updatedAt: stampedAt("updated_at"),
+    updatedBy: uuid("updated_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+  },
+  (t) => [
+    index("budget_imports_project_idx").on(t.projectId),
+    // Jedna revize souboru = nejvýše jeden PLATNÝ import (ochrana proti duplicitnímu importu).
+    uniqueIndex("budget_imports_one_active_per_revision").on(t.documentRevisionId).where(sql`${t.status} = 'active'`),
+    check("budget_imports_status_valid", inList(t.status, BUDGET_IMPORT_STATUSES)),
+    check("budget_imports_vat_valid", sql`${t.vatBasis} is null or ${inList(t.vatBasis, VAT_BASES)}`),
+    check("budget_imports_currency_format", sql`${t.currency} is null or ${t.currency} ~ '^[A-Z]{3}$'`),
+    check("budget_imports_mapping_is_array", sql`jsonb_typeof(${t.mapping}) = 'array' and jsonb_array_length(${t.mapping}) between 1 and 50`),
+    check(
+      "budget_imports_void_consistent",
+      sql`(${t.status} = 'voided' and ${t.voidedAt} is not null and ${t.voidedBy} is not null
+           and ${t.voidReason} is not null and length(btrim(${t.voidReason})) > 0)
+       or (${t.status} <> 'voided' and ${t.voidedAt} is null and ${t.voidedBy} is null and ${t.voidReason} is null)`,
+    ),
+    check("budget_imports_version_positive", sql`${t.version} >= 1`),
+  ],
+);
+
+// ---------- budget_items (řádky rozpočtu) ----------
+// PŮVODNÍ hodnoty z Excelu (raw_*, raw_cells) a rozpoznané hodnoty jsou NEMĚNNÉ (trigger).
+// Měnit lze jen interpretaci člověkem: druh řádku (kind) a vyřízení ruční kontroly (reviewed_*).
+
+export interface RawCell {
+  /** Hodnota tak, jak ji vrátila knihovna (text / číslo / datum ISO / logická) – beze změny. */
+  value: string | number | boolean | null;
+  /** Buňka obsahuje vzorec (value = poslední spočtený výsledek, pokud byl v souboru uložen). */
+  formula?: boolean;
+  /** Chybová hodnota Excelu (#REF!, #DIV/0! …). */
+  error?: string;
+}
+
+export const budgetItems = pgTable(
+  "budget_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    importId: uuid("import_id")
+      .notNull()
+      .references(() => budgetImports.id, { onDelete: "restrict" }),
+    sheetName: text("sheet_name").notNull(),
+    /** Číslo řádku v Excelu (1 = první řádek listu) – dohledatelnost k originálu. */
+    rowNumber: integer("row_number").notNull(),
+    /** Původní buňky řádku: písmeno sloupce → hodnota. */
+    rawCells: jsonb("raw_cells").$type<Record<string, RawCell>>().notNull(),
+    /** Druh řádku navržený při importu (neměnný). */
+    detectedKind: text("detected_kind", { enum: BUDGET_ROW_KINDS }).notNull(),
+    /** Druh řádku platný nyní (výchozí = navržený; může upravit člověk s historií). */
+    kind: text("kind", { enum: BUDGET_ROW_KINDS }).notNull(),
+    code: text("code"),
+    description: text("description"),
+    unitRaw: text("unit_raw"),
+    /** Sjednocená jednotka (ks, m, m², m³, kpl, kg, t, h) – jen když je jednoznačná. */
+    unit: text("unit"),
+    quantityRaw: text("quantity_raw"),
+    quantity: numeric("quantity", { precision: 18, scale: 4 }),
+    quantityStatus: text("quantity_status", { enum: QUANTITY_STATUSES }).notNull(),
+    unitPriceRaw: text("unit_price_raw"),
+    unitPrice: numeric("unit_price", { precision: 18, scale: 2 }),
+    totalPriceRaw: text("total_price_raw"),
+    totalPrice: numeric("total_price", { precision: 18, scale: 2 }),
+    /** Důvody ruční kontroly (prázdné pole = bez výhrad). */
+    reviewReasons: jsonb("review_reasons").$type<string[]>().notNull().default([]),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: "date" }),
+    reviewedBy: uuid("reviewed_by").references(() => users.id, { onDelete: "restrict" }),
+    reviewNote: text("review_note"),
+  },
+  (t) => [
+    unique("budget_items_row_unique").on(t.importId, t.sheetName, t.rowNumber),
+    index("budget_items_import_idx").on(t.importId),
+    check("budget_items_row_positive", sql`${t.rowNumber} >= 1`),
+    check("budget_items_sheet_not_blank", sql`length(btrim(${t.sheetName})) > 0`),
+    check("budget_items_raw_cells_object", sql`jsonb_typeof(${t.rawCells}) = 'object'`),
+    check("budget_items_detected_kind_valid", inList(t.detectedKind, BUDGET_ROW_KINDS)),
+    check("budget_items_kind_valid", inList(t.kind, BUDGET_ROW_KINDS)),
+    check("budget_items_quantity_status_valid", inList(t.quantityStatus, QUANTITY_STATUSES)),
+    // Číselné množství jen se stavem „numeric“; jinak prázdné (nic se nevymýšlí).
+    check(
+      "budget_items_quantity_consistent",
+      sql`(${t.quantityStatus} = 'numeric' and ${t.quantity} is not null) or (${t.quantityStatus} <> 'numeric' and ${t.quantity} is null)`,
+    ),
+    check("budget_items_quantity_missing_has_no_raw", sql`${t.quantityStatus} <> 'missing' or ${t.quantityRaw} is null`),
+    check("budget_items_review_reasons_array", sql`jsonb_typeof(${t.reviewReasons}) = 'array'`),
+    check(
+      "budget_items_review_consistent",
+      sql`(${t.reviewedAt} is null and ${t.reviewedBy} is null) or (${t.reviewedAt} is not null and ${t.reviewedBy} is not null)`,
+    ),
+  ],
+);
+
+// ---------- material_needs (sledovaná dodávka materiálu / technologie) ----------
+// Není to objednávka ani skladová položka. Termíny a stavy objednávání přidá V2-4.
+
+export const materialNeeds = pgTable(
+  "material_needs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    trackingReason: text("tracking_reason", { enum: TRACKING_REASONS }).notNull(),
+    /** Vlastní text důvodu (povinný u „Jiný důvod“, jinak nepovinné upřesnění). */
+    trackingReasonNote: text("tracking_reason_note"),
+    /** Množství PLÁNOVANÉ k zajištění (vlastní údaj dodávky). Množství z rozpočtu je v material_need_sources. */
+    plannedQuantity: numeric("planned_quantity", { precision: 18, scale: 4 }),
+    unit: text("unit"),
+    /** Odpovědný – ve V2-3 nepovinný („Nepřiřazeno“); před objednáním (V2-4) povinný. */
+    responsibleUserId: uuid("responsible_user_id").references(() => users.id, { onDelete: "restrict" }),
+    note: text("note"),
+    status: text("status", { enum: MATERIAL_NEED_STATUSES }).notNull().default("to_confirm"),
+    archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+    archivedBy: uuid("archived_by").references(() => users.id, { onDelete: "restrict" }),
+    archiveReason: text("archive_reason"),
+    version: integer("version").notNull().default(1),
+    createdAt: stampedAt("created_at"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    updatedAt: stampedAt("updated_at"),
+    updatedBy: uuid("updated_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+  },
+  (t) => [
+    index("material_needs_project_idx").on(t.projectId),
+    check("material_needs_name_not_blank", notBlank(t.name)),
+    check("material_needs_reason_valid", inList(t.trackingReason, TRACKING_REASONS)),
+    check(
+      "material_needs_other_reason_has_note",
+      sql`${t.trackingReason} <> 'other' or (${t.trackingReasonNote} is not null and length(btrim(${t.trackingReasonNote})) > 0)`,
+    ),
+    check("material_needs_planned_quantity_positive", sql`${t.plannedQuantity} is null or ${t.plannedQuantity} > 0`),
+    check("material_needs_status_valid", inList(t.status, MATERIAL_NEED_STATUSES)),
+    check(
+      "material_needs_archive_consistent",
+      sql`(${t.status} = 'archived' and ${t.archivedAt} is not null and ${t.archivedBy} is not null
+           and ${t.archiveReason} is not null and length(btrim(${t.archiveReason})) > 0)
+       or (${t.status} <> 'archived' and ${t.archivedAt} is null and ${t.archivedBy} is null and ${t.archiveReason} is null)`,
+    ),
+    check("material_needs_version_positive", sql`${t.version} >= 1`),
+  ],
+);
+
+// ---------- material_need_sources (ze kterých položek rozpočtu dodávka vznikla) ----------
+// Vazba mnoho:mnoho → sloučení (více položek → 1 dodávka) i rozdělení (1 položka → více dodávek).
+
+export const materialNeedSources = pgTable(
+  "material_need_sources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    materialNeedId: uuid("material_need_id")
+      .notNull()
+      .references(() => materialNeeds.id, { onDelete: "restrict" }),
+    budgetItemId: uuid("budget_item_id")
+      .notNull()
+      .references(() => budgetItems.id, { onDelete: "restrict" }),
+    /** Množství PŘEVZATÉ z rozpočtové položky do této dodávky; prázdné u položky bez číselného množství. */
+    quantityTaken: numeric("quantity_taken", { precision: 18, scale: 4 }),
+    /** Povinný důvod, pokud součet převzatých množství překročí množství položky (hlídá trigger). */
+    overAllocationReason: text("over_allocation_reason"),
+    note: text("note"),
+    createdAt: stampedAt("created_at"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+  },
+  (t) => [
+    unique("material_need_sources_unique").on(t.materialNeedId, t.budgetItemId),
+    index("material_need_sources_item_idx").on(t.budgetItemId),
+    check("material_need_sources_quantity_positive", sql`${t.quantityTaken} is null or ${t.quantityTaken} > 0`),
+    check("material_need_sources_reason_not_blank", sql`${t.overAllocationReason} is null or length(btrim(${t.overAllocationReason})) > 0`),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type ProjectMember = typeof projectMembers.$inferSelect;
@@ -358,3 +581,7 @@ export type ProjectEvent = typeof events.$inferSelect;
 export type HistoryEntry = typeof historyEntries.$inferSelect;
 export type Document = typeof documents.$inferSelect;
 export type DocumentRevision = typeof documentRevisions.$inferSelect;
+export type BudgetImport = typeof budgetImports.$inferSelect;
+export type BudgetItem = typeof budgetItems.$inferSelect;
+export type MaterialNeed = typeof materialNeeds.$inferSelect;
+export type MaterialNeedSource = typeof materialNeedSources.$inferSelect;

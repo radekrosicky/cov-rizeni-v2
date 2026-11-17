@@ -1,6 +1,7 @@
 # Plán etapy V2-3 – Excelový rozpočet a sledování materiálu
 
-> **Stav: NÁVRH KE SCHVÁLENÍ.** Žádný kód, tabulka ani migrace zatím nevznikly.
+> **Stav: SCHVÁLENO s upřesněním (17. 11. 2026).** Návrh migrace 0003 čeká na schválení – [DATABAZE-V2-3.md](DATABAZE-V2-3.md).
+> Rozhodnutí a doplňující pravidla v kap. 13–14 mají přednost před původním textem.
 > Vychází z Master zadání v1.0 (kap. 4 kroky 4–5, 5.2, 5.6, 6; scénáře S2, S13), větve `v2-2-dokumenty` (`cc2a7f9`).
 > V2-2 zatím **není uživatelsky ověřená** v Codespaces – ověření proběhne později; V2-3 na ni jen navazuje.
 
@@ -168,3 +169,27 @@ Pouze fiktivní rozpočty generované v testech a ve vývojových datech (smyšl
 4. **Odpovědný u dodávky** ve V2-3 nepovinný (povinný od V2-4, kdy vzniknou úkoly k objednání)?
 5. **Rozdělení nad množství položky** – zablokovat úplně, nebo povolit s povinným důvodem? Návrh: povolit jen s důvodem.
 6. **Nová revize rozpočtu** – nový import vedle starého bez automatického přepojení dodávek (jen upozornění) – souhlasíte?
+
+## 13. Rozhodnutí vlastníka (17. 11. 2026)
+
+1. Knihovna `read-excel-file` – **ano**, pevná verze, s bezpečnostní kontrolou.
+2. Rozpočet nejdřív jako **dokument**, import vázaný na konkrétní **revizi** – ano.
+3. Seznam důvodů sledování – ano, **vždy lze zadat vlastní důvod**.
+4. Odpovědný ve V2-3 nepovinný; chybí-li, zobrazit **„Nepřiřazeno“**; před objednáním (V2-4) musí být vyřešen.
+5. Překročení množství z rozpočtu jen po **zřetelném upozornění a s důvodem**; původní množství se nikdy nemění;
+   **odděleně množství převzaté z rozpočtu a množství plánované k zajištění**; ošetřit nečíselné a nejednoznačné množství.
+6. Nová revize rozpočtu = nový import; dodávky, vazby ani potvrzené údaje se automaticky nepřepisují; **upozornit**.
+
+## 14. Doplňující pravidla (17. 11. 2026)
+
+- Import rozlišuje **materiál, práci, službu, mezisoučty, nadpisy a ostatní** – ne každý řádek je materiál k objednání.
+- **Jednotková a celková cena zvlášť**; nejasné ceny, jednotky, **měnu a DPH nevymýšlet** (prázdné = neznámé).
+- **Vzorce:** ověřit, zda mají dostupný a použitelný výsledek; chybějící, chybový (`#REF!`…) nebo podezřelý výsledek → k ruční kontrole.
+  (Knihovna vrací poslední spočtený výsledek; to, že buňka je vzorec a zda má uložený výsledek, zjistíme z XML listu sami.)
+- Náhled nemusí vypadat jako Excel – podstatné jsou **hodnoty, názvy listů, čísla řádků a sloupců a dohledatelnost**.
+- Před definitivním importem jde **výběr sloupců opravit nebo import zrušit** (náhled se neukládá).
+- **Ruční dodávka bez položky rozpočtu** – ano.
+- Dodávky a vazby upravuje jen správce a zástupce s právem úprav; **sledující jen čte**.
+- **Limity Excelu chrání i paměť** – změřeno, viz DATABAZE-V2-3.md kap. 3 (předběžná kontrola + oddělené vlákno se stropem paměti).
+- **Co nejjednodušší ovládání:** běžný případ „jedna technologie“ = zaškrtnout položku → *Sledovat* → jeden krátký formulář
+  (název a množství předvyplněné, vybrat důvod) → hotovo.

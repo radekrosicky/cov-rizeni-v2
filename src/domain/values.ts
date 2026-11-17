@@ -62,7 +62,18 @@ export const EVENT_KIND_LABELS: Record<EventKind, string> = {
 export const EVENT_STATUSES = ["active", "cancelled"] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
-export const HISTORY_ENTITY_TYPES = ["user", "project", "project_member", "event", "document", "document_revision"] as const;
+export const HISTORY_ENTITY_TYPES = [
+  "user",
+  "project",
+  "project_member",
+  "event",
+  "document",
+  "document_revision",
+  "budget_import",
+  "budget_item",
+  "material_need",
+  "material_need_source",
+] as const;
 export type HistoryEntityType = (typeof HISTORY_ENTITY_TYPES)[number];
 
 export const HISTORY_ACTIONS = [
@@ -78,6 +89,9 @@ export const HISTORY_ACTIONS = [
   "role_change",
   "upload_revision",
   "set_current_revision",
+  "link_source",
+  "unlink_source",
+  "review",
 ] as const;
 export type HistoryAction = (typeof HISTORY_ACTIONS)[number];
 
@@ -113,3 +127,50 @@ export type DocumentStatus = (typeof DOCUMENT_STATUSES)[number];
  *  ZIP a jiné archivy nejsou povolené (schváleno k plánu V2-2). */
 export const FILE_KINDS = ["pdf", "xlsx", "docx", "jpeg", "png", "webp", "heic", "tiff", "dwg", "dxf"] as const;
 export type FileKind = (typeof FILE_KINDS)[number];
+
+// ---------- Rozpočet a sledovaný materiál (V2-3) ----------
+
+/** Import rozpočtu: platný, nebo zneplatněný s důvodem. „Nahrazen novější revizí“ se odvozuje, neukládá. */
+export const BUDGET_IMPORT_STATUSES = ["active", "voided"] as const;
+export type BudgetImportStatus = (typeof BUDGET_IMPORT_STATUSES)[number];
+
+/** Druh řádku rozpočtu. Ne každý řádek je materiál k objednání. */
+export const BUDGET_ROW_KINDS = ["material", "work", "service", "heading", "subtotal", "other"] as const;
+export type BudgetRowKind = (typeof BUDGET_ROW_KINDS)[number];
+export const BUDGET_ROW_KIND_LABELS: Record<BudgetRowKind, string> = {
+  material: "Materiál / technologie",
+  work: "Práce",
+  service: "Služba",
+  heading: "Nadpis",
+  subtotal: "Mezisoučet",
+  other: "Ostatní",
+};
+
+/** Stav množství z rozpočtu – nic se nevymýšlí. */
+export const QUANTITY_STATUSES = ["numeric", "missing", "non_numeric", "ambiguous"] as const;
+export type QuantityStatus = (typeof QUANTITY_STATUSES)[number];
+export const QUANTITY_STATUS_LABELS: Record<QuantityStatus, string> = {
+  numeric: "Číslo",
+  missing: "Chybí",
+  non_numeric: "Není číslo",
+  ambiguous: "Nejednoznačné",
+};
+
+/** Ceny v rozpočtu: s DPH / bez DPH; neznámé = prázdné (nevymýšlí se). */
+export const VAT_BASES = ["without_vat", "with_vat"] as const;
+export type VatBasis = (typeof VAT_BASES)[number];
+
+/** Důvod sledování dodávky (schváleno k plánu V2-3) – vždy lze doplnit vlastní text. Cena NENÍ důvodem. */
+export const TRACKING_REASONS = ["critical_technology", "long_lead_time", "may_block_assembly", "risky_supplier", "other"] as const;
+export type TrackingReason = (typeof TRACKING_REASONS)[number];
+export const TRACKING_REASON_LABELS: Record<TrackingReason, string> = {
+  critical_technology: "Kritická technologie",
+  long_lead_time: "Dlouhá dodací lhůta",
+  may_block_assembly: "Může zastavit montáž",
+  risky_supplier: "Rizikový dodavatel",
+  other: "Jiný důvod",
+};
+
+/** Stav sledované dodávky. Ve V2-3 jen „K potvrzení“; další stavy (objednat → … → dodáno) přidá V2-4 novou migrací. */
+export const MATERIAL_NEED_STATUSES = ["to_confirm", "archived"] as const;
+export type MaterialNeedStatus = (typeof MATERIAL_NEED_STATUSES)[number];

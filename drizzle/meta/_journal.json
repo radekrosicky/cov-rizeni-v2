@@ -22,6 +22,13 @@
       "when": 1794943455114,
       "tag": "0002_v2_2_dokumenty",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794949098627,
+      "tag": "0003_v2_3_rozpocet_material",
+      "breakpoints": true
     }
   ]
 }

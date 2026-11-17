@@ -56,7 +56,7 @@ describe("migrace 0002 – přechod ze stávající databáze V2-1", () => {
       await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER }); // doplní jen 0002
       expect(await snapshotV21(db)).toEqual(before);
       const t = await db.execute<{ n: number }>(sql`select count(*)::int as n from information_schema.tables where table_schema = 'public'`);
-      expect(t.rows[0]!.n).toBe(7);
+      expect(t.rows[0]!.n).toBe(11); // 0002 + 0003 (v testu se aplikují všechny migrace ve složce)
       // Staré druhy záznamů historie zůstávají platné.
       expect(await db.$count(historyEntries)).toBeGreaterThan(0);
     } finally {
@@ -201,8 +201,8 @@ describe("migrace 0002 – ochrany dokumentů a revizí", () => {
 });
 
 describe("pojistka schvalování migrací", () => {
-  it("všechny migrace ve složce drizzle/ jsou schválené (0000–0002)", async () => {
+  it("0000–0002 schválené; návrh 0003 čeká na schválení – skripty vývojové databáze ho neaplikují", async () => {
     const { pendingApproval } = await import("./migrate.ts");
-    expect(pendingApproval()).toEqual([]);
+    expect(pendingApproval()).toEqual(["0003_v2_3_rozpocet_material"]);
   });
 });

@@ -12,7 +12,7 @@ import {
   pragueParts,
   pragueToInstant,
   pragueToday,
-} from "./calendar";
+} from "./calendar.ts";
 
 const at = (s: string) => new Date(s);
 describe("kalendář – české svátky", () => {

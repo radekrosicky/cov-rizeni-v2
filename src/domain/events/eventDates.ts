@@ -1,6 +1,6 @@
 // Termíny události: smluvní, plánovaný a skutečný – tři různé údaje, nikdy se nezaměňují.
 // Plánované datum se nikdy neukazuje jako nastalé; bez data = „čeká na ověření“ (Master zadání 5.1).
-import { formatDateCz, isIsoDate, type IsoDate } from "../calendar/calendar";
+import { formatDateCz, isIsoDate, type IsoDate } from "../calendar/calendar.ts";
 
 export interface EventDates {
   contractDate: IsoDate | null;

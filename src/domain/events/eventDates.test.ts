@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventDateView, validateEventDateChange, type EventDates } from "./eventDates";
+import { eventDateView, validateEventDateChange, type EventDates } from "./eventDates.ts";
 
 const d = (contractDate: string | null, plannedDate: string | null, actualDate: string | null): EventDates => ({
   contractDate,

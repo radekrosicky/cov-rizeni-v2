@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SIGNALS, signalLabel, type Signal } from "./signal";
+import { SIGNALS, signalLabel, type Signal } from "./signal.ts";
 
 describe("signal – jazyk upozornění", () => {
   it("každý signál má neprázdný slovní popis (nikdy jen barva)", () => {

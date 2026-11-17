@@ -1,49 +1,85 @@
-// Strážní test: termíny zakázky smí existovat jen v tabulce events (jeden údaj = jeden zdroj).
-// Nový sloupec typu `date` mimo seznam níže = test selže → vědomé rozhodnutí, ne omyl.
+// Strážní test pravidla „jeden zdroj termínů“ (viz schemaRules.ts).
+// Hlídá kopie termínů událostí a milníků; NEBRÁNÍ samostatným termínům objednávek, dodávek, úkolů a dokumentů.
 import { is } from "drizzle-orm";
-import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
+import { date, getTableConfig, pgTable, PgTable, text, uuid } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import * as schema from "./schema";
-
-/** Povolené obchodní datové sloupce (tabulka.sloupec) a důvod. */
-const ALLOWED_DATE_COLUMNS: Record<string, string> = {
-  "events.contract_date": "smluvní termín události",
-  "events.planned_date": "interní plán události",
-  "events.actual_date": "skutečné datum události",
-};
+import * as schema from "./schema.ts";
+import { checkDateColumn, checkSchemaDates, dateColumns } from "./schemaRules.ts";
 
 const tables: PgTable[] = (Object.values(schema) as unknown[]).filter((v): v is PgTable => is(v, PgTable));
 
-describe("schéma – jeden zdroj termínů", () => {
+describe("schéma V2-1 – jeden zdroj termínů událostí", () => {
   it("načte všech 5 tabulek", () => {
-    expect(tables.map((t) => getTableConfig(t).name).sort()).toEqual([
-      "events",
-      "history_entries",
-      "project_members",
-      "projects",
-      "users",
+    expect(tables.length).toBe(5);
+  });
+
+  it("současné schéma pravidlo splňuje; termíny jsou jen v events", () => {
+    expect(checkSchemaDates(tables)).toEqual([]);
+    expect(dateColumns(tables)).toEqual([
+      { table: "events", column: "contract_date" },
+      { table: "events", column: "planned_date" },
+      { table: "events", column: "actual_date" },
     ]);
   });
 
-  it("sloupce typu date jsou jen ty schválené (v tabulce events)", () => {
-    const found = tables.flatMap((t) => {
-      const cfg = getTableConfig(t);
-      return cfg.columns.filter((c) => c.getSQLType() === "date").map((c) => `${cfg.name}.${c.name}`);
-    });
-    expect(found.sort()).toEqual(Object.keys(ALLOWED_DATE_COLUMNS).sort());
-  });
-
-  it("časová razítka jsou jen metadata záznamu (končí na _at) – žádný skrytý termín", () => {
+  it("časová razítka jsou jen metadata záznamu (končí na _at)", () => {
     for (const t of tables) {
-      const cfg = getTableConfig(t);
-      for (const c of cfg.columns.filter((x) => x.getSQLType().startsWith("timestamp"))) {
-        expect(c.name === "at" || c.name.endsWith("_at"), `${cfg.name}.${c.name}`).toBe(true);
+      for (const col of getTableConfig(t).columns) {
+        if (col.getSQLType().startsWith("timestamp")) expect(col.name === "at" || col.name.endsWith("_at"), col.name).toBe(true);
       }
     }
   });
+});
 
-  it("zakázka nemá žádný vlastní termín", () => {
-    const cols = getTableConfig(schema.projects).columns.map((c) => c.name);
-    expect(cols.filter((n) => /(^|_)(date|termin|deadline|start|handover|assembly|due)(_|$)/i.test(n))).toEqual([]);
+describe("pravidlo NEBLOKUJE budoucí samostatné termíny", () => {
+  it.each([
+    ["material_needs", "need_date_override"],
+    ["material_needs", "ordered_date"],
+    ["material_needs", "promised_delivery_date"],
+    ["material_needs", "planned_delivery_date"],
+    ["material_needs", "confirmed_delivery_date"],
+    ["material_needs", "actual_delivery_date"],
+    ["purchase_orders", "order_date"],
+    ["tasks", "due_date"],
+    ["readiness_conditions", "verify_by_date"],
+    ["document_revisions", "document_date"],
+    ["document_revisions", "revision_date"],
+  ])("%s.%s je povolený", (table, column) => {
+    expect(checkDateColumn({ table, column })).toBeNull();
+  });
+
+  it("totéž platí pro skutečnou tabulku Drizzle (příklad budoucího materiálu)", () => {
+    const futureMaterial = pgTable("material_needs", {
+      id: uuid("id").primaryKey(),
+      eventId: uuid("event_id"), // odkaz na konkrétní událost, ne kopie jejího data
+      name: text("name"),
+      orderedDate: date("ordered_date", { mode: "string" }),
+      confirmedDeliveryDate: date("confirmed_delivery_date", { mode: "string" }),
+      actualDeliveryDate: date("actual_delivery_date", { mode: "string" }),
+    });
+    expect(checkSchemaDates([...tables, futureMaterial])).toEqual([]);
+  });
+});
+
+describe("pravidlo ZACHYTÍ kopii termínu události / milníku", () => {
+  it.each([
+    ["material_needs", "assembly_date"],
+    ["material_needs", "assembly_start_date"],
+    ["readiness_conditions", "stage_date"],
+    ["readiness_conditions", "milestone_date"],
+    ["tasks", "event_date"],
+    ["tasks", "site_handover_date"],
+    ["documents", "handover_date"],
+    ["material_needs", "planned_date"],
+    ["material_needs", "actual_date"],
+    ["material_needs", "contract_date"],
+  ])("%s.%s je odmítnut", (table, column) => {
+    expect(checkDateColumn({ table, column })).not.toBeNull();
+  });
+
+  it("zakázka nesmí mít žádný vlastní datový sloupec", () => {
+    expect(checkDateColumn({ table: "projects", column: "start_date" })).not.toBeNull();
+    const badProjects = pgTable("projects", { id: uuid("id"), assemblyStart: date("assembly_start", { mode: "string" }) });
+    expect(checkSchemaDates([badProjects]).map((v) => v.column)).toEqual(["assembly_start"]);
   });
 });

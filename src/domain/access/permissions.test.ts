@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { GlobalRole, MemberAccess, ProjectStatus } from "../values";
-import { canGlobal, canProject, effectiveAccess, type Actor, type ProjectAction } from "./permissions";
+import type { GlobalRole, MemberAccess, ProjectStatus } from "../values.ts";
+import { canGlobal, canProject, effectiveAccess, type Actor, type ProjectAction } from "./permissions.ts";
 
 const actor = (globalRole: GlobalRole, status: Actor["status"] = "active"): Actor => ({ id: "u", globalRole, status });
 const ctx = (membership: MemberAccess | null, status: ProjectStatus = "realization") => ({ membership, status });

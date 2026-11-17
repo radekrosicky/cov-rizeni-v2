@@ -18,16 +18,25 @@ CREATE TRIGGER history_entries_no_truncate
   FOR EACH STATEMENT EXECUTE FUNCTION history_entries_append_only();
 --> statement-breakpoint
 
--- 2) Vedoucí zakázky je vždy jejím členem s přístupem „edit“ (rozhodnutí k plánu V2-1, bod 4).
+-- 2) Vedoucí zakázky (rozhodnutí k plánu V2-1, bod 4 a upřesnění ke schválení migrace):
+--    a) je vždy jejím členem s přístupem „edit“,
+--    b) nesmí to být uživatel, jehož globální role dovoluje jen čtení (sledující).
 --    Kontrola je odložená na konec transakce, aby šlo zakázku a členství založit v jedné transakci.
 CREATE FUNCTION assert_project_leader_is_editor(p_project_id uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 DECLARE
   v_leader uuid;
+  v_role text;
 BEGIN
-  SELECT leader_user_id INTO v_leader FROM projects WHERE id = p_project_id;
+  SELECT p.leader_user_id, u.global_role INTO v_leader, v_role
+  FROM projects p JOIN users u ON u.id = p.leader_user_id
+  WHERE p.id = p_project_id;
   IF v_leader IS NULL THEN
     RETURN; -- zakázka neexistuje (nemůže nastat při ON DELETE RESTRICT)
+  END IF;
+  IF v_role NOT IN ('admin', 'deputy') THEN
+    RAISE EXCEPTION 'Vedoucím zakázky nemůže být uživatel s rolí jen pro čtení (sledující).'
+      USING ERRCODE = 'check_violation';
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM project_members
@@ -64,3 +73,21 @@ CREATE CONSTRAINT TRIGGER project_members_keep_leader
   AFTER UPDATE OR DELETE ON project_members
   DEFERRABLE INITIALLY DEFERRED
   FOR EACH ROW EXECUTE FUNCTION project_members_leader_check();
+--> statement-breakpoint
+-- Změna globální role uživatele na „sledující“ nesmí nechat zakázku s vedoucím jen pro čtení.
+CREATE FUNCTION users_leader_role_check() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_project uuid;
+BEGIN
+  FOR v_project IN SELECT id FROM projects WHERE leader_user_id = NEW.id LOOP
+    PERFORM assert_project_leader_is_editor(v_project);
+  END LOOP;
+  RETURN NULL;
+END;
+$$;
+--> statement-breakpoint
+CREATE CONSTRAINT TRIGGER users_keep_leader_role
+  AFTER UPDATE OF global_role ON users
+  DEFERRABLE INITIALLY DEFERRED
+  FOR EACH ROW EXECUTE FUNCTION users_leader_role_check();

@@ -34,7 +34,7 @@ import {
   PROJECT_STATUSES,
   PROJECT_TYPES,
   USER_STATUSES,
-} from "@/domain/values";
+} from "../../domain/values.ts";
 
 const inList = (column: AnyPgColumn, values: readonly string[]) =>
   sql`${column} in (${sql.join(

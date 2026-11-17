@@ -1,6 +1,6 @@
 // Oprávnění (R1, Q7, Q11, S16). Čistá funkce – volá ji serverová vrstva před KAŽDÝM čtením i zápisem.
 // Skryté tlačítko v obrazovce není ochrana; rozhoduje tato funkce na serveru.
-import type { GlobalRole, MemberAccess, ProjectStatus, UserStatus } from "../values";
+import type { GlobalRole, MemberAccess, ProjectStatus, UserStatus } from "../values.ts";
 
 export interface Actor {
   id: string;

@@ -3,9 +3,9 @@
 import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
-import type { Db } from "./client";
-import { events, historyEntries, projectMembers, projects, users } from "./schema";
-import { createTestDb } from "./testDb";
+import type { Db } from "./client.ts";
+import { events, historyEntries, projectMembers, projects, users } from "./schema.ts";
+import { createTestDb } from "./testDb.ts";
 
 let db: Db;
 let client: PGlite;
@@ -155,11 +155,46 @@ describe("vedoucí zakázky je vždy členem s úpravami", () => {
   it("změna vedoucího projde jen spolu s jeho členstvím „edit“", async () => {
     const pid = await addProject();
     const where = sql`${projects.id} = ${pid}`;
-    expect(await pgError(db.update(projects).set({ leaderUserId: viewerId }).where(where))).toMatch(/Vedoucí zakázky/);
+    expect(await pgError(db.update(projects).set({ leaderUserId: adminId }).where(where))).toMatch(/Vedoucí zakázky/);
     await db.transaction(async (tx) => {
       await tx.insert(projectMembers).values({ projectId: pid, userId: adminId, access: "edit", addedBy: adminId });
       await tx.update(projects).set({ leaderUserId: adminId }).where(where);
     });
+  });
+
+  // Upřesnění ke schválení migrace, bod 1.
+  it("zakázku lze založit a v téže transakci zapsat vedoucího jako člena s úpravami", async () => {
+    const pid = await addProject("ČOV Fiktivní Ves", deputyId);
+    const members = await db.select().from(projectMembers).where(sql`${projectMembers.projectId} = ${pid}`);
+    expect(members).toMatchObject([{ userId: deputyId, access: "edit" }]);
+    const adminLed = await addProject("ČOV Fiktivní Brod", adminId);
+    expect(adminLed).toBeTruthy();
+  });
+
+  it("vedoucím nesmí být sledující – ani s členstvím „edit“", async () => {
+    const msg = await pgError(addProject("ČOV Fiktivní Pole", viewerId));
+    expect(msg).toMatch(/Vedoucím zakázky nemůže být uživatel s rolí jen pro čtení/);
+    expect(await db.$count(projects)).toBe(0); // nic se neuložilo ani částečně
+  });
+
+  it("vedoucího nelze převést na sledujícího a nelze ho předat sledujícímu", async () => {
+    const pid = await addProject("ČOV Fiktivní Les", deputyId);
+    expect(await pgError(db.update(users).set({ globalRole: "viewer" }).where(sql`${users.id} = ${deputyId}`))).toMatch(
+      /Vedoucím zakázky nemůže být/,
+    );
+    const msg = await pgError(
+      db.transaction(async (tx) => {
+        await tx.insert(projectMembers).values({ projectId: pid, userId: viewerId, access: "edit", addedBy: adminId });
+        await tx.update(projects).set({ leaderUserId: viewerId }).where(sql`${projects.id} = ${pid}`);
+      }),
+    );
+    expect(msg).toMatch(/Vedoucím zakázky nemůže být/);
+  });
+
+  it("změna role uživatele, který nic nevede, projde", async () => {
+    await addProject("ČOV Fiktivní Mlýn", deputyId);
+    await db.update(users).set({ globalRole: "deputy" }).where(sql`${users.id} = ${viewerId}`);
+    await db.update(users).set({ globalRole: "viewer" }).where(sql`${users.id} = ${viewerId}`);
   });
 
   it("sledujícího lze přidat jen pro čtení, aniž by to vadilo", async () => {

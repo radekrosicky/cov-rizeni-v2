@@ -3,11 +3,11 @@
 Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vod.
 **Není to ERP.** Hlavní otázka: *„Co dnes musím řešit a proč?“*
 
-> **Stav: etapa V2-2 – dokumenty zakázky** (navazuje na V2-1: zakázka, uživatelé, oprávnění, události a milníky).
+> **Stav: etapa V2-3 – Excelový rozpočet a sledování materiálu** (navazuje na V2-1 a V2-2; V2-2 zatím není uživatelsky ověřená).
 > Pouze fiktivní data. Skutečné přihlášení zatím neexistuje – ve vývojovém režimu se volí
 > **fiktivní vývojová identita** (není to zabezpečení; v produkčním režimu je technicky vypnutá).
 
-## Co funguje (V2-1 + V2-2)
+## Co funguje (V2-1 + V2-2 + V2-3)
 
 | Oblast | Stav |
 |---|---|
@@ -20,13 +20,16 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 | Fiktivní vývojové identity (jen `npm run dev`) | ✅ |
 | **Dokumenty:** nahrání, seznam s filtrem podle druhu, otevřít / stáhnout, revize (aktuální / nahrazená), změna aktuální revize s důvodem, archivace s důvodem, historie | ✅ V2-2 |
 | Kontrola typu souboru podle obsahu (PDF, XLSX, DOCX, JPG, PNG, WEBP, HEIC, TIFF, DWG, DXF; XLSX/DOCX včetně struktury a rozbaleného obsahu), limit 50 MB | ✅ V2-2 |
-| Detail zakázky – záložky Materiál, Úkoly, Připravenost | ⛔ jasně označené prázdné stavy |
+| **Rozpočet:** načtení XLSX z Dokumentů, náhled listů, potvrzení sloupců, kontrola nejednoznačných položek, uložení; původní hodnoty dohledatelné | ✅ V2-3 |
+| **Sledované dodávky:** z jedné položky, sloučení, rozdělení, ruční bez Excelu, důvod sledování, odpovědný („Nepřiřazeno“) | ✅ V2-3 |
+| Termíny objednání a dodání, výchozí rezerva 14 dní | ⛔ až V2-4 |
+| Detail zakázky – záložky Úkoly, Připravenost | ⛔ jasně označené prázdné stavy |
 | „Co dnes řešit“, „Moje úkoly“ | ⛔ jasně označené prázdné stavy |
 | Skutečné přihlášení e-mailem a heslem | ⛔ samostatná etapa |
 
 ## Spuštění v GitHub Codespaces
 
-1. Na GitHubu přepněte na větev `v2-2-dokumenty`.
+1. Na GitHubu přepněte na větev `v2-3-rozpocet-material`.
 2. **Code → Codespaces → Create codespace on …**
 3. Počkejte na přípravu: nainstalují se knihovny a **založí se vývojová databáze s fiktivními daty**
    (`npm run db:setup -- --if-missing`).
@@ -40,7 +43,8 @@ Port 3000 nechte **soukromý** (výchozí). Nikdy ho nepřepínejte na „Public
 
 Fiktivní uživatelé: **Správce**, **Zástupce**, **Sledující 1**, **Sledující 2** (e-maily `@example.test`).
 Fiktivní zakázky: *ČOV Fiktivín* (sledující 1 čte), *ČOV Testovice* (sledující 2 čte), *ČOV Vzorová* (sledující ji nevidí).
-*ČOV Fiktivín* má 7 fiktivních dokumentů (smlouva, dodatek, výkres ve 2 revizích, rozpočet XLSX, zápis z KD DOCX, foto, DXF).
+*ČOV Fiktivín* má 7 fiktivních dokumentů (smlouva, dodatek, výkres ve 2 revizích, **položkový rozpočet XLSX od 2 fiktivních
+dodavatelů**, zápis z KD DOCX, foto, DXF).
 
 ### Už otevřený Codespace z dřívější větve
 Zastavte aplikaci (Ctrl+C) a spusťte postupně:
@@ -50,7 +54,7 @@ git fetch origin
 ```
 
 ```bash
-git switch v2-2-dokumenty
+git switch v2-3-rozpocet-material
 ```
 
 ```bash
@@ -65,8 +69,8 @@ npm run db:migrate
 npm run dev
 ```
 
-`db:migrate` doplní tabulky dokumentů a vaše dosavadní zkušební data ponechá. Chcete-li i fiktivní dokumenty,
-použijte místo něj `npm run db:reset` (smaže vývojovou databázi a založí ji znovu s fiktivními daty).
+`db:migrate` doplní nové tabulky a vaše dosavadní zkušební data ponechá. Chcete-li fiktivní dokumenty včetně
+fiktivního rozpočtu, použijte místo něj `npm run db:reset` (smaže vývojovou databázi a založí ji znovu s fiktivními daty).
 
 ## Spuštění na vlastním počítači
 
@@ -121,9 +125,10 @@ src/
     db/           schéma, připojení, migrace, pravidla schématu
     storage/      úložiště souborů (rozhraní + místní vývojové úložiště; později firemní úložiště)
     documents/    kontrola nahraných souborů podle obsahu
+    budget/       čtení Excelu v samostatném procesu s limity (readerProcess.ts, reader.ts)
     seed/         fiktivní data
   lib/            technické pomůcky
-drizzle/          SQL migrace (0000 tabulky, 0001 ochrany, 0002 dokumenty) + seznam schválených
+drizzle/          SQL migrace (0000 tabulky, 0001 ochrany, 0002 dokumenty, 0003 rozpočet a materiál) + seznam schválených
 scripts/          db:setup / db:reset / db:migrate
 e2e/              testy v prohlížeči
 tests/            architektonické testy
@@ -137,7 +142,7 @@ docs/             dokumentace
 - [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – tabulky, přístup uživatelů, migrace a její stav
 - [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 a rozhodnutí
 - [docs/PLAN-V2-2.md](docs/PLAN-V2-2.md) / [docs/DATABAZE-V2-2.md](docs/DATABAZE-V2-2.md) – dokumenty: plán, databáze, bezpečnost nahrávání
-- [docs/PLAN-V2-3.md](docs/PLAN-V2-3.md) / [docs/DATABAZE-V2-3.md](docs/DATABAZE-V2-3.md) – V2-3 rozpočet a materiál: plán (schválen), návrh migrace 0003 (čeká na schválení)
+- [docs/PLAN-V2-3.md](docs/PLAN-V2-3.md) / [docs/DATABAZE-V2-3.md](docs/DATABAZE-V2-3.md) – V2-3 rozpočet a materiál: plán, databáze, ochrana paměti, omezení PGlite
 - [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický model celé aplikace
 - [docs/PREVZETI-Z-V1.md](docs/PREVZETI-Z-V1.md) – co se převzalo / lze převzít z V1

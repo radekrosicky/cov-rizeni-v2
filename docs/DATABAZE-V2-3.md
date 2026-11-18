@@ -1,9 +1,7 @@
 # Databáze V2-3 – návrh migrace 0003 (rozpočet a sledovaný materiál) ke schválení
 
-> **Stav: NÁVRH. Migrace 0003 NENÍ aplikovaná** – vývojová databáze má dál 7 tabulek (V2-1 + V2-2).
-> `npm run db:setup` / `db:migrate` ji odmítnou, dokud ji nezařadím do `drizzle/schvalene-migrace.json` po vašem schválení.
-> Testy ji spouští jen na dočasných databázích v paměti. Migrace 0000–0002 se nezměnily.
-> Obrazovky ani import rozpočtu zatím neexistují.
+> **Stav: SCHVÁLENO a APLIKOVÁNO (18. 11. 2026)** na vývojovou databázi V2 s fiktivními daty; implementace V2-3 hotová.
+> Migrace `0003_v2_3_rozpocet_material` je v `drizzle/schvalene-migrace.json` a už se nemění.
 
 ## 1. Tabulky a vztahy
 
@@ -59,7 +57,7 @@ přes vazbu → položka (list, řádek, původní buňky) → import → revize
 Pravidla, která **nehlídá databáze, ale budou ve službách** (V2-3 implementace): oprávnění (sledující jen čte),
 upozornění na novější revizi rozpočtu, upozornění na shodný soubor (SHA-256) a na již sledovanou položku, historie.
 
-## 3. Ochrana paměti při čtení Excelu (změřeno 17. 11. 2026)
+## 3. Ochrana paměti a stability při čtení Excelu (změřeno 17. 11., implementováno 18. 11. 2026)
 
 | Fiktivní rozpočet | Soubor | Rozbaleno | Špička paměti `read-excel-file` | Čas |
 |---|---|---|---|---|
@@ -69,9 +67,13 @@ upozornění na novější revizi rozpočtu, upozornění na shodný soubor (SHA
 Paměť roste zhruba **5× nad rozbalenou velikost** – samotný limit 300 MB z V2-2 by u rozpočtu nestačil. Návrh pro implementaci:
 1. **Před čtením** (vlastní kontrola kontejneru z V2-2): rozbalená velikost listů + sdílených textů rozpočtu **≤ 40 MB**,
    ≤ 50 listů; jinak srozumitelné odmítnutí („rozpočet je příliš rozsáhlý – rozdělte ho“).
-2. **Čtení v odděleném vlákně** se stropem paměti (`resourceLimits`, např. 384 MB) – **ověřeno**: při překročení se ukončí
-   jen vlákno (`ERR_WORKER_OUT_OF_MEMORY`), server běží dál.
-3. Po přečtení limity **20 000 řádků na list, 200 sloupců**; najednou nejvýše **jedno čtení** rozpočtu na server.
+2. **Čtení v SAMOSTATNÉM PROCESU** (bezpečnější než vlákno – vlákno sdílí paměť procesu a jeho strop nepokrývá vše,
+   např. data mimo hlavní paměť JavaScriptu): strop paměti JavaScriptu 384 MB, **hlídání skutečné paměti procesu**
+   (RSS 640 MB, Linux), časový limit 60 s, omezení výstupu 80 MB, proces nedostane žádné tajné proměnné.
+   Pád nebo ukončení procesu aplikaci neovlivní – uživatel dostane srozumitelnou zprávu (ověřeno testy).
+3. Limity **jednoho listu** (20 000 řádků, 200 sloupců) i **celého souboru** (50 listů, 50 000 řádků, 1 000 000 buněk,
+   40 MB po rozbalení); najednou nejvýše **jedno čtení** rozpočtu (další čekají, nejvýše 3 ve frontě).
+   Překročení = srozumitelná zpráva a **žádný neúplný import**.
 4. Náhled pracuje s prvními řádky; plné čtení až při potvrzení importu.
 
 ## 4. Testy schématu (nové / upravené)
@@ -96,3 +98,12 @@ takže souběh v testu nelze vyvolat – zámek je ověřen až na skutečném P
 - Jen **přidává** 4 tabulky a rozšiřuje povolené hodnoty historie. Zakázky, události, oprávnění a dokumenty se nemění (ověřeno testem).
 - Po schválení: zařadit do `schvalene-migrace.json` → vývojová databáze `npm run db:migrate` (aplikace vypnutá).
 - Žádná nová knihovna v tomto kroku (`read-excel-file` se přidá až s implementací importu).
+
+## 6. Omezení testování na PGlite (výslovně)
+
+Vývojová i testovací databáze je **PGlite** (PostgreSQL v jednom procesu) s **jediným spojením**:
+- souběžné operace se v ní **řadí za sebou**; testy souběhu (dvojí import, současné převzetí stejné položky,
+  souběžná úprava dodávky) proto ověřují **správný výsledek** (nic se nezdvojí ani tiše nepřekročí), ne skutečné
+  paralelní zamykání (`pg_advisory_xact_lock`, `SELECT … FOR UPDATE`, jedinečné indexy při současných transakcích);
+- **před skutečným víceuživatelským provozem je nutné tyto testy zopakovat na plnohodnotném PostgreSQL**
+  (zařadit do podmínek ostrého provozu spolu se zálohami, přihlášením a antivirem).

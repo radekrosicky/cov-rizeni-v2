@@ -24,7 +24,9 @@ export type ProjectAction =
   | "project.unarchive" // jen správce
   | "members.manage" // přidělování přístupu – jen správce (Q11)
   | "document.view" // seznam, detail, otevřít, stáhnout (i sledující u přidělené zakázky)
-  | "document.manage"; // nahrát, nová revize, změna aktuální revize, úprava údajů, archivace (V2-2)
+  | "document.manage" // nahrát, nová revize, změna aktuální revize, úprava údajů, archivace (V2-2)
+  | "material.view" // rozpočtové položky, sledované dodávky (i sledující u přidělené zakázky)
+  | "material.manage"; // import rozpočtu, dodávky a jejich vazby (V2-3)
 
 export type GlobalAction = "project.create";
 
@@ -62,6 +64,7 @@ export function canProject(actor: Actor, action: ProjectAction, project: Project
     case "project.view":
     case "history.view":
     case "document.view":
+    case "material.view":
       return allow;
     case "project.archive":
       if (access !== "admin") return deny("admin_only");
@@ -75,6 +78,7 @@ export function canProject(actor: Actor, action: ProjectAction, project: Project
     case "project.edit":
     case "event.edit":
     case "document.manage":
+    case "material.manage":
       if (access === "read") return deny("read_only");
       // Archivovaná zakázka je jen pro čtení i pro správce; nejdřív ji musí obnovit (s historií).
       return project.status === "archived" ? deny("archived") : allow;

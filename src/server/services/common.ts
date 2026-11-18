@@ -86,3 +86,26 @@ export function requireReason(reason: string | null | undefined, field = "reason
 }
 
 export type ProjectRow = Project;
+
+/**
+ * Převod chyby z databázových pravidel (triggery, CHECK, jedinečnost) na srozumitelnou chybu služby.
+ * Triggery vrací české hlášky – ty se ukážou uživateli; ostatní dostanou obecný text. Jiné chyby se propustí.
+ */
+export function fromDbError(e: unknown, uniqueMessages: Record<string, string> = {}): unknown {
+  if (e instanceof DomainError) return e;
+  type PgErr = { code?: string; message?: string; constraint?: string };
+  const err = e as PgErr & { cause?: PgErr };
+  const cause: PgErr = err.cause ?? err;
+  const code = cause.code;
+  const msg = cause.message ?? "";
+  if (code === "23505") {
+    const key = Object.keys(uniqueMessages).find((k) => msg.includes(k) || cause.constraint === k);
+    return new DomainError("conflict", key ? uniqueMessages[key]! : "Záznam už existuje.");
+  }
+  if (code === "23514" || code === "23001" || code === "P0001") {
+    // Hlášky z triggerů jsou česky a určené uživateli; CHECK omezení mají technický název.
+    const human = /[ěščřžýáíéůú]/i.test(msg) && !/violates check constraint/.test(msg);
+    return new DomainError("validation", human ? msg : "Údaje nesplňují pravidla aplikace. Nic nebylo uloženo.");
+  }
+  return e;
+}

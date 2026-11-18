@@ -1,6 +1,6 @@
 # Plán etapy V2-3 – Excelový rozpočet a sledování materiálu
 
-> **Stav: SCHVÁLENO s upřesněním (17. 11. 2026).** Návrh migrace 0003 čeká na schválení – [DATABAZE-V2-3.md](DATABAZE-V2-3.md).
+> **Stav: DOKONČENO (18. 11. 2026)** – migrace 0003 schválena a aplikována; podrobnosti [DATABAZE-V2-3.md](DATABAZE-V2-3.md).
 > Rozhodnutí a doplňující pravidla v kap. 13–14 mají přednost před původním textem.
 > Vychází z Master zadání v1.0 (kap. 4 kroky 4–5, 5.2, 5.6, 6; scénáře S2, S13), větve `v2-2-dokumenty` (`cc2a7f9`).
 > V2-2 zatím **není uživatelsky ověřená** v Codespaces – ověření proběhne později; V2-3 na ni jen navazuje.
@@ -193,3 +193,17 @@ Pouze fiktivní rozpočty generované v testech a ve vývojových datech (smyšl
 - **Limity Excelu chrání i paměť** – změřeno, viz DATABAZE-V2-3.md kap. 3 (předběžná kontrola + oddělené vlákno se stropem paměti).
 - **Co nejjednodušší ovládání:** běžný případ „jedna technologie“ = zaškrtnout položku → *Sledovat* → jeden krátký formulář
   (název a množství předvyplněné, vybrat důvod) → hotovo.
+
+## 15. Stav po implementaci (18. 11. 2026)
+
+- ✅ Import: rozpočet z Dokumentů → náhled listů (skryté označené) s navrženými sloupci → oprava sloupců / zrušení →
+  kontrola (souhrn podle druhů, seznam k ruční kontrole) → potvrzení (povinné zaškrtnutí kontroly) → jedna transakce.
+- ✅ Druhy řádků materiál / práce / služba / nadpis / mezisoučet / ostatní; jednotková a celková cena zvlášť; měna a DPH jen potvrzené.
+- ✅ Vzorce: výsledek čten z knihovny, příznak vzorce a chybějící výsledek / chyba Excelu (#REF!…) z XML listu → k ruční kontrole.
+- ✅ Čtení Excelu v samostatném procesu s limity jednoho listu i celého souboru; přetížení nesloží aplikaci (testy).
+- ✅ Dodávky: jedna položka → dodávka jedním formulářem; sloučení; „každou zvlášť“; rozdělení (zbývající množství předvyplněné,
+  potvrzení); překročení jen s důvodem; ruční dodávka; „Nepřiřazeno“; přidání položek do existující dodávky; archivace.
+- ✅ Původní položky s buňkami z Excelu, revizí a listem/řádkem; upozornění na novější revizi; nic se automaticky nepřepisuje.
+- ✅ Oprávnění na serveru (sledující jen čte); souběžné změny (s omezením PGlite – DATABAZE-V2-3.md kap. 6).
+- ✅ Formuláře se neodešlou naslepo, dokud se stránka neoživí (oprava i pro dřívější formuláře).
+- ⏸ Zastaveno před V2-4 (termíny objednání).

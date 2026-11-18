@@ -16,6 +16,8 @@ const ALL: ProjectAction[] = [
   "members.manage",
   "document.view",
   "document.manage",
+  "material.view",
+  "material.manage",
 ];
 
 describe("oprávnění – správce", () => {
@@ -110,5 +112,15 @@ describe("oprávnění – dokumenty (V2-2)", () => {
     expect(canProject(actor("viewer"), "document.manage", ctx("edit"))).toEqual({ allowed: false, reason: "read_only" });
     expect(canProject(actor("admin"), "document.manage", ctx(null, "archived"))).toEqual({ allowed: false, reason: "archived" });
     expect(canProject(actor("deputy"), "document.view", ctx(null))).toEqual({ allowed: false, reason: "not_member" });
+  });
+});
+
+describe("oprávnění – rozpočet a materiál (V2-3)", () => {
+  it("číst smí všichni s přístupem; spravovat správce a zástupce s úpravami; sledující nikdy; archiv nikdo", () => {
+    for (const role of ["admin", "deputy", "viewer"] as const) expect(ok(actor(role), "material.view", ctx("read"))).toBe(true);
+    expect(ok(actor("deputy"), "material.manage", ctx("edit"))).toBe(true);
+    expect(canProject(actor("viewer"), "material.manage", ctx("edit"))).toEqual({ allowed: false, reason: "read_only" });
+    expect(canProject(actor("admin"), "material.manage", ctx(null, "archived"))).toEqual({ allowed: false, reason: "archived" });
+    expect(canProject(actor("deputy"), "material.view", ctx(null))).toEqual({ allowed: false, reason: "not_member" });
   });
 });

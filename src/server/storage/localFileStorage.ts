@@ -109,6 +109,12 @@ export class LocalFileStorage implements FileStorage {
     return { stream: handle.createReadStream({ autoClose: true }), sizeBytes: stat.size };
   }
 
+  async withLocalFile<T>(key: string, fn: (path: string) => Promise<T>): Promise<T> {
+    const file = this.keyPath(key);
+    await fsp.access(file);
+    return fn(file);
+  }
+
   async cleanupStaleTemp(olderThanMs: number): Promise<number> {
     let removed = 0;
     const entries = await fsp.readdir(this.tmpDir).catch(() => [] as string[]);

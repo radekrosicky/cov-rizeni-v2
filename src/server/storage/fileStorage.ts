@@ -47,6 +47,9 @@ export interface FileStorage {
   openRead(key: string): Promise<{ stream: Readable; sizeBytes: number }>;
   /** Smaže dočasné soubory starší než daný věk (úklid po pádu serveru během nahrávání). */
   cleanupStaleTemp(olderThanMs: number): Promise<number>;
+  /** Zpřístupní uložený soubor jako místní soubor jen pro čtení (např. pro samostatný proces čtečky rozpočtu).
+   *  Místní úložiště předá přímo cestu; vzdálené úložiště ho později dočasně stáhne a po skončení smaže. */
+  withLocalFile<T>(key: string, fn: (path: string) => Promise<T>): Promise<T>;
   /** Přímý zápis malého souboru (jen fiktivní data seedu) – stejné zásady jako receive + commit. */
   putNew(key: string, data: Uint8Array): Promise<{ sizeBytes: number; sha256: string }>;
 }

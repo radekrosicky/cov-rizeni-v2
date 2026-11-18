@@ -8,7 +8,8 @@ import { createProject, updateProject } from "../services/projects.ts";
 import { writeHistory } from "../services/common.ts";
 import { uploadDocumentRevision } from "../services/documents.ts";
 import type { FileStorage } from "../storage/fileStorage.ts";
-import { fictiveDocx, fictiveDxf, fictivePdf, fictivePng, fictiveXlsx } from "./fictiveFiles.ts";
+import { fictiveBudgetXlsx } from "./fictiveBudget.ts";
+import { fictiveDocx, fictiveDxf, fictivePdf, fictivePng } from "./fictiveFiles.ts";
 
 export const DEV_USERS = [
   { email: "spravce@example.test", displayName: "Správce (fiktivní)", globalRole: "admin" },
@@ -82,7 +83,8 @@ async function seedDocuments(db: Db, storage: FileStorage, actor: SessionActor, 
   await up({ category: "contract", title: "Dodatek č. 1 ke smlouvě (FIKTIVNÍ)", documentDate: "2026-10-20", filename: "dodatek-1-fiktivni.pdf" }, fictivePdf(["Dodatek c. 1 - zmena terminu montaze (fiktivni)"]));
   const drawing = await up({ category: "design", title: "D.1.3 Technologie – dispozice (FIKTIVNÍ)", revisionLabel: "A", documentDate: "2026-08-01", filename: "D13-dispozice-revA.pdf" }, fictivePdf(["Vykres D.1.3 - revize A (fiktivni)"]));
   await uploadDocumentRevision(db, storage, actor, projectId, { documentId: drawing.documentId, expectedVersion: null, category: null, title: null, documentDate: "2026-10-02", revisionLabel: "B", note: "Posun dmychadla o 1,2 m (fiktivní změna)", filename: "D13-dispozice-revB.pdf" }, [fictivePdf(["Vykres D.1.3 - revize B (fiktivni)"])]);
-  await up({ category: "budget", title: "Položkový rozpočet (FIKTIVNÍ)", documentDate: "2026-09-10", filename: "rozpocet-fiktivni.xlsx" }, fictiveXlsx());
+  // Fiktivní položkový rozpočet (2 dodavatelé, různé struktury) – připravený k importu ve V2-3.
+  await up({ category: "budget", title: "Položkový rozpočet (FIKTIVNÍ)", documentDate: "2026-09-10", filename: "rozpocet-fiktivni.xlsx" }, fictiveBudgetXlsx());
   await up({ category: "site_meeting", title: "Zápis z KD č. 1 (FIKTIVNÍ)", documentDate: "2026-10-21", filename: "zapis-kd-1-fiktivni.docx" }, fictiveDocx());
   await up({ category: "photo", title: "Staveniště – výkop (FIKTIVNÍ FOTO)", documentDate: "2026-10-14", filename: "foto-staveniste.png" }, fictivePng());
   await up({ category: "design", title: "Situace (FIKTIVNÍ DXF)", filename: "situace-fiktivni.dxf" }, fictiveDxf());

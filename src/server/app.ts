@@ -3,6 +3,8 @@
 import { getDb } from "./db/client.ts";
 import * as devIdentity from "./identity/devIdentity.ts";
 import * as docs from "./services/documents.ts";
+import * as budget from "./services/budget.ts";
+import * as material from "./services/material.ts";
 import { LocalFileStorage, resolveFilesDir } from "./storage/localFileStorage.ts";
 import type { FileStorage } from "./storage/fileStorage.ts";
 import * as events from "./services/events.ts";
@@ -61,3 +63,30 @@ export const resolveDevActor = (userId: string) => devIdentity.resolveDevActor(g
 export type { EventInput } from "./services/events.ts";
 export type { UploadMeta } from "./services/documents.ts";
 import type { SessionActor } from "./services/common.ts";
+
+// ---------- Rozpočet a sledovaný materiál (V2-3) ----------
+export const listBudgetSources = bind(budget.listBudgetSources);
+export const previewBudget = (actor: SessionActor, projectId: string, revisionId: string) => budget.previewBudget(getDb(), getStorage(), actor, projectId, revisionId);
+export const analyzeBudget = (actor: SessionActor, projectId: string, revisionId: string, mappings: Parameters<typeof budget.analyzeBudget>[5]) =>
+  budget.analyzeBudget(getDb(), getStorage(), actor, projectId, revisionId, mappings);
+export const confirmImport = (actor: SessionActor, projectId: string, revisionId: string, input: budget.ConfirmInput) =>
+  budget.confirmImport(getDb(), getStorage(), actor, projectId, revisionId, input);
+export const voidImport = bind(budget.voidImport);
+export const listBudgetItems = bind(budget.listBudgetItems);
+export const getBudgetItem = bind(budget.getBudgetItem);
+export const setItemKind = bind(budget.setItemKind);
+export const markItemReviewed = bind(budget.markItemReviewed);
+
+export const createNeedsFromItems = bind(material.createNeedsFromItems);
+export const createManualNeed = bind(material.createManualNeed);
+export const updateNeed = bind(material.updateNeed);
+export const addSourcesToNeed = bind(material.addSourcesToNeed);
+export const updateSourceQuantity = bind(material.updateSourceQuantity);
+export const removeSource = bind(material.removeSource);
+export const archiveNeed = bind(material.archiveNeed);
+export const unarchiveNeed = bind(material.unarchiveNeed);
+export const listNeeds = bind(material.listNeeds);
+export const getNeed = bind(material.getNeed);
+export const listResponsibleCandidates = bind(material.listResponsibleCandidates);
+export const getItemsForTracking = bind(material.getItemsForTracking);
+export type { NeedFields, SourceInput } from "./services/material.ts";

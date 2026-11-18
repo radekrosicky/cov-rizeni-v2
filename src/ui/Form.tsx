@@ -2,7 +2,7 @@
 
 // Formulář napojený na serverovou akci. „Uloženo“ se ukáže až po potvrzení serverem (S11);
 // při chybě (i při výpadku sítě) zůstane formulář vyplněný a zobrazí se jasné hlášení.
-import { createContext, useActionState, useContext, useTransition, type FormEvent, type ReactNode } from "react";
+import { createContext, useActionState, useContext, useSyncExternalStore, useTransition, type FormEvent, type ReactNode } from "react";
 import type { FormState } from "./formState";
 import { btnPrimary, inputCls } from "./styles";
 
@@ -29,6 +29,13 @@ export function ActionForm({
     }
   }, null);
   const [, startTransition] = useTransition();
+  // Dokud se stránka v prohlížeči „neoživí“ (pomalé spojení), tlačítko je vypnuté: formulář se nesmí odeslat
+  // obyčejnou cestou bez skriptu – nic by se neuložilo a údaje by skončily v adrese stránky.
+  const ready = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   // Odeslání přes onSubmit (ne přes `action`): React by jinak po každém odeslání formulář vyprázdnil
   // a uživatel by při chybě přišel o zadané údaje.
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -37,21 +44,21 @@ export function ActionForm({
     startTransition(() => formAction(fd));
   };
   return (
-    <form onSubmit={onSubmit} className="space-y-4" noValidate>
+    <form onSubmit={onSubmit} method="post" className="space-y-4" noValidate>
       {state && !state.ok && (
         <div role="alert" className="rounded-md border border-red-200 bg-signal-problem-bg px-3 py-2 text-sm font-medium text-signal-problem">
           {state.message}
         </div>
       )}
       <ErrorsCtx.Provider value={state?.fieldErrors ?? {}}>{children}</ErrorsCtx.Provider>
-      <SubmitButton label={submitLabel} className={submitClassName} pending={pending} />
+      <SubmitButton label={submitLabel} className={submitClassName} pending={pending} ready={ready} />
     </form>
   );
 }
 
-function SubmitButton({ label, className, pending }: { label: string; className: string; pending: boolean }) {
+function SubmitButton({ label, className, pending, ready }: { label: string; className: string; pending: boolean; ready: boolean }) {
   return (
-    <button type="submit" className={`${className} w-full sm:w-auto`} disabled={pending}>
+    <button type="submit" className={`${className} w-full sm:w-auto`} disabled={pending || !ready} title={ready ? undefined : "Načítám formulář…"}>
       {pending ? "Ukládám…" : label}
     </button>
   );

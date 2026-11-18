@@ -19,6 +19,9 @@ const ACTION_LABELS: Record<string, string> = {
   role_change: "Změněna role",
   upload_revision: "Nahrán soubor",
   set_current_revision: "Změněna aktuální revize",
+  link_source: "Položka rozpočtu přidána do dodávky",
+  unlink_source: "Položka rozpočtu odebrána z dodávky",
+  review: "Položka zkontrolována",
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -28,7 +31,7 @@ const FIELD_LABELS: Record<string, string> = {
   leaderUserId: "vedoucí",
   clientName: "objednatel",
   status: "stav",
-  kind: "typ události",
+  kind: "druh",
   title: "název",
   isMilestone: "milník",
   contractDate: "smluvní termín",
@@ -40,6 +43,18 @@ const FIELD_LABELS: Record<string, string> = {
   revisionNo: "revize",
   file: "soubor",
   currentRevision: "aktuální revize",
+  source: "zdroj",
+  sheets: "listy",
+  items: "položek",
+  needsReview: "k ruční kontrole",
+  need: "dodávka",
+  item: "položka",
+  quantityTaken: "převzaté množství",
+  plannedQuantity: "plánované množství",
+  trackingReason: "důvod sledování",
+  trackingReasonNote: "vlastní důvod",
+  responsibleUserId: "odpovědný",
+  reviewReasons: "kontrola",
 };
 
 const fmt = (d: Date) =>

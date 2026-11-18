@@ -15,7 +15,7 @@
 - Nikdy necommituj přímo do `main`; pracovní větev + pull request.
 - Pouze fiktivní data. Žádné skutečné firemní údaje, jména ani smlouvy.
 - Žádné placené služby ani placená AI API. Nová závislost = zdůvodnit a nechat schválit.
-- Nová migrace = předložit ke schválení před aplikací; do `drizzle/schvalene-migrace.json` až po schválení. Schválené migrace (`0000`–`0002`) neměnit.
+- Nová migrace = předložit ke schválení před aplikací; do `drizzle/schvalene-migrace.json` až po schválení. Schválené migrace (`0000`–`0003`) neměnit.
 - `npm run db:reset` jen s vypnutou aplikací; maže jen vývojovou databázi v `data/`.
 - Nepředstírej neexistující funkce. Žádné falešné přihlášení vydávané za zabezpečení.
 - Neměň repozitář V1 (`radekrosicky/cov-rizeni`).
@@ -29,6 +29,8 @@
 - Obrazovky nevolají databázi přímo – jen `src/server/app.ts` (hlídá lint).
 - Soubory jen přes rozhraní `FileStorage` (nikdy nepřepsat, klíč generuje server); typ souboru podle obsahu.
 - Nahrávání souborů jen samostatnou adresou s průběžným zpracováním a kontrolou původu (ne serverovou akcí).
+- Excel se čte jen v samostatném procesu (`src/server/budget/reader.ts`) s limity – nikdy přímo v aplikaci.
+- Testy souběhu běží na PGlite (jedno spojení) – před ostrým provozem ověřit na PostgreSQL.
 - V `src/domain` a `src/server` nepoužívat zkrácené vlastnosti v konstruktoru (`constructor(private x)`) – Node je nespustí.
 - V `src/domain` a `src/server` relativní importy s příponou `.ts` (skripty běží přímo v Node.js).
 - UI česky, identifikátory v kódu anglicky, komentáře česky.

@@ -7,7 +7,7 @@ test("hlavní obrazovky V2-1 se na mobilu nevodorovně neposouvají", async ({ p
   await page.getByRole("link", { name: /Fiktivín/ }).click();
   await page.waitForURL(/\/zakazky\/[0-9a-f-]{36}$/);
   const detail = new URL(page.url()).pathname;
-  for (const path of ["/zakazky", detail, `${detail}/udalosti/nova`, `${detail}/historie`, `${detail}/clenove`, "/zakazky/nova", "/vyvoj/identita", `${detail}/dokumenty`, `${detail}/dokumenty/novy`]) {
+  for (const path of ["/zakazky", detail, `${detail}/udalosti/nova`, `${detail}/historie`, `${detail}/clenove`, "/zakazky/nova", "/vyvoj/identita", `${detail}/dokumenty`, `${detail}/dokumenty/novy`, `${detail}/material`, `${detail}/material/polozky`, `${detail}/material/import`, `${detail}/material/nova`]) {
     await page.goto(path);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, path).toBeLessThanOrEqual(0);

@@ -29,6 +29,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  DEFAULT_RESERVE_DAYS,
   BUDGET_IMPORT_STATUSES,
   BUDGET_ROW_KINDS,
   DOCUMENT_CATEGORIES,
@@ -39,6 +40,8 @@ import {
   GLOBAL_ROLES,
   HISTORY_ACTIONS,
   HISTORY_ENTITY_TYPES,
+  LEAD_TIME_STATUSES,
+  LEAD_TIME_UNITS,
   MATERIAL_NEED_STATUSES,
   MEMBER_ACCESS,
   PROJECT_STATUSES,
@@ -509,6 +512,20 @@ export const materialNeeds = pgTable(
     /** Odpovědný – ve V2-3 nepovinný („Nepřiřazeno“); před objednáním (V2-4) povinný. */
     responsibleUserId: uuid("responsible_user_id").references(() => users.id, { onDelete: "restrict" }),
     note: text("note"),
+    // ---- Termín potřeby (V2-4): JEN odkaz na konkrétní událost + posun; datum montáže zůstává v events. ----
+    /** Událost / milník, ke kterému materiál potřebujeme (téže zakázky; hlídá trigger). */
+    needEventId: uuid("need_event_id").references(() => events.id, { onDelete: "restrict" }),
+    /** Posun vůči události v KALENDÁŘNÍCH dnech (záporný = před událostí, kladný = po ní). */
+    needOffsetDays: integer("need_offset_days").notNull().default(0),
+    /** Výjimečně vlastní datum potřeby – jen s důvodem a nikdy zároveň s událostí. */
+    needDateOverride: date("need_date_override", { mode: "string" }),
+    needDateOverrideReason: text("need_date_override_reason"),
+    // ---- Dodací lhůta a rezerva (vlastní údaje dodávky). Prázdná lhůta = NEZNÁMÁ (žádný termín objednání). ----
+    leadTimeDays: integer("lead_time_days"),
+    leadTimeUnit: text("lead_time_unit", { enum: LEAD_TIME_UNITS }),
+    leadTimeStatus: text("lead_time_status", { enum: LEAD_TIME_STATUSES }),
+    /** Bezpečnostní rezerva před potřebou – vždy KALENDÁŘNÍ dny; výchozí 14 (R4). */
+    reserveDays: integer("reserve_days").notNull().default(DEFAULT_RESERVE_DAYS),
     status: text("status", { enum: MATERIAL_NEED_STATUSES }).notNull().default("to_confirm"),
     archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
     archivedBy: uuid("archived_by").references(() => users.id, { onDelete: "restrict" }),
@@ -533,6 +550,26 @@ export const materialNeeds = pgTable(
     ),
     check("material_needs_planned_quantity_positive", sql`${t.plannedQuantity} is null or ${t.plannedQuantity} > 0`),
     check("material_needs_status_valid", inList(t.status, MATERIAL_NEED_STATUSES)),
+    index("material_needs_event_idx").on(t.needEventId),
+    check("material_needs_offset_range", sql`${t.needOffsetDays} between -365 and 365`),
+    // Vlastní datum jen s důvodem; nikdy zároveň s událostí (jinak by vznikly dva zdroje termínu).
+    check(
+      "material_needs_override_has_reason",
+      sql`(${t.needDateOverride} is null and ${t.needDateOverrideReason} is null)
+       or (${t.needDateOverride} is not null and ${t.needDateOverrideReason} is not null and length(btrim(${t.needDateOverrideReason})) > 0)`,
+    ),
+    check("material_needs_event_or_override", sql`${t.needEventId} is null or ${t.needDateOverride} is null`),
+    check("material_needs_override_no_offset", sql`${t.needDateOverride} is null or ${t.needOffsetDays} = 0`),
+    // Dodací lhůta: buď celá (počet + jednotka + stav), nebo nic (= neznámá).
+    check(
+      "material_needs_lead_time_complete",
+      sql`(${t.leadTimeDays} is null and ${t.leadTimeUnit} is null and ${t.leadTimeStatus} is null)
+       or (${t.leadTimeDays} is not null and ${t.leadTimeUnit} is not null and ${t.leadTimeStatus} is not null)`,
+    ),
+    check("material_needs_lead_time_range", sql`${t.leadTimeDays} is null or ${t.leadTimeDays} between 1 and 730`),
+    check("material_needs_lead_unit_valid", sql`${t.leadTimeUnit} is null or ${inList(t.leadTimeUnit, LEAD_TIME_UNITS)}`),
+    check("material_needs_lead_status_valid", sql`${t.leadTimeStatus} is null or ${inList(t.leadTimeStatus, LEAD_TIME_STATUSES)}`),
+    check("material_needs_reserve_range", sql`${t.reserveDays} between 0 and 365`),
     check(
       "material_needs_archive_consistent",
       sql`(${t.status} = 'archived' and ${t.archivedAt} is not null and ${t.archivedBy} is not null

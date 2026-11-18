@@ -20,6 +20,7 @@ describe("schéma V2-1 – jeden zdroj termínů událostí", () => {
       { table: "events", column: "actual_date" },
       { table: "events", column: "contract_date" },
       { table: "events", column: "planned_date" },
+      { table: "material_needs", column: "need_date_override" },
     ]);
   });
 

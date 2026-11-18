@@ -171,6 +171,23 @@ export const TRACKING_REASON_LABELS: Record<TrackingReason, string> = {
   other: "Jiný důvod",
 };
 
-/** Stav sledované dodávky. Ve V2-3 jen „K potvrzení“; další stavy (objednat → … → dodáno) přidá V2-4 novou migrací. */
+/** Stav sledované dodávky. „K potvrzení“ / archivováno; stavy objednáno → dodáno přidá etapa evidence objednávek. */
 export const MATERIAL_NEED_STATUSES = ["to_confirm", "archived"] as const;
 export type MaterialNeedStatus = (typeof MATERIAL_NEED_STATUSES)[number];
+
+// ---------- Termíny potřeby a doporučené objednání (V2-4) ----------
+
+/** Dodací lhůta v kalendářních, nebo pracovních dnech (bez víkendů a českých svátků). */
+export const LEAD_TIME_UNITS = ["calendar", "working"] as const;
+export type LeadTimeUnit = (typeof LEAD_TIME_UNITS)[number];
+export const LEAD_TIME_UNIT_LABELS: Record<LeadTimeUnit, string> = { calendar: "kalendářních dní", working: "pracovních dní" };
+
+/** Stav dodací lhůty. Neznámá lhůta se neukládá jako hodnota (prázdné) – žádný vymyšlený termín. */
+export const LEAD_TIME_STATUSES = ["estimate", "confirmed"] as const;
+export type LeadTimeStatus = (typeof LEAD_TIME_STATUSES)[number];
+export const LEAD_TIME_STATUS_LABELS: Record<LeadTimeStatus, string> = { estimate: "odhad – ověřit", confirmed: "potvrzeno dodavatelem" };
+
+/** Výchozí bezpečnostní rezerva před potřebou materiálu (R4) – KALENDÁŘNÍ dny, u dodávky upravitelná. */
+export const DEFAULT_RESERVE_DAYS = 14;
+/** Hranice upozornění „blíží se“ před DOPORUČENÝM TERMÍNEM OBJEDNÁNÍ – jiný údaj než rezerva. */
+export const ORDER_SOON_DAYS = 14;

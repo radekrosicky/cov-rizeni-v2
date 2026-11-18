@@ -22,7 +22,7 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 | Kontrola typu souboru podle obsahu (PDF, XLSX, DOCX, JPG, PNG, WEBP, HEIC, TIFF, DWG, DXF; XLSX/DOCX včetně struktury a rozbaleného obsahu), limit 50 MB | ✅ V2-2 |
 | **Rozpočet:** načtení XLSX z Dokumentů, náhled listů, potvrzení sloupců, kontrola nejednoznačných položek, uložení; původní hodnoty dohledatelné | ✅ V2-3 |
 | **Sledované dodávky:** z jedné položky, sloučení, rozdělení, ruční bez Excelu, důvod sledování, odpovědný („Nepřiřazeno“) | ✅ V2-3 |
-| Termíny objednání a dodání, výchozí rezerva 14 dní | ⛔ až V2-4 |
+| Termíny potřeby a doporučené objednání (V2-4) | 🟡 návrh migrace 0004 ke schválení ([docs/DATABAZE-V2-4.md](docs/DATABAZE-V2-4.md)); obrazovky zatím ne |
 | Detail zakázky – záložky Úkoly, Připravenost | ⛔ jasně označené prázdné stavy |
 | „Co dnes řešit“, „Moje úkoly“ | ⛔ jasně označené prázdné stavy |
 | Skutečné přihlášení e-mailem a heslem | ⛔ samostatná etapa |
@@ -128,7 +128,7 @@ src/
     budget/       čtení Excelu v samostatném procesu s limity (readerProcess.ts, reader.ts)
     seed/         fiktivní data
   lib/            technické pomůcky
-drizzle/          SQL migrace (0000 tabulky, 0001 ochrany, 0002 dokumenty, 0003 rozpočet a materiál) + seznam schválených
+drizzle/          SQL migrace (0000 tabulky, 0001 ochrany, 0002 dokumenty, 0003 rozpočet a materiál; 0004 termíny – návrh) + seznam schválených
 scripts/          db:setup / db:reset / db:migrate
 e2e/              testy v prohlížeči
 tests/            architektonické testy
@@ -142,7 +142,7 @@ docs/             dokumentace
 - [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – tabulky, přístup uživatelů, migrace a její stav
 - [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 a rozhodnutí
 - [docs/PLAN-V2-2.md](docs/PLAN-V2-2.md) / [docs/DATABAZE-V2-2.md](docs/DATABAZE-V2-2.md) – dokumenty: plán, databáze, bezpečnost nahrávání
-- [docs/PLAN-V2-4.md](docs/PLAN-V2-4.md) – plán V2-4 Termíny potřeby a doporučené objednání (návrh ke schválení)
+- [docs/PLAN-V2-4.md](docs/PLAN-V2-4.md) / [docs/DATABAZE-V2-4.md](docs/DATABAZE-V2-4.md) – V2-4 termíny potřeby a doporučené objednání: plán (schválen), návrh migrace 0004 (ke schválení)
 - [docs/PLAN-V2-3.md](docs/PLAN-V2-3.md) / [docs/DATABAZE-V2-3.md](docs/DATABAZE-V2-3.md) – V2-3 rozpočet a materiál: plán, databáze, ochrana paměti, omezení PGlite
 - [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický model celé aplikace

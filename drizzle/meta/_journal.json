@@ -29,6 +29,13 @@
       "when": 1794949098627,
       "tag": "0003_v2_3_rozpocet_material",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794998960656,
+      "tag": "0004_v2_4_terminy",
+      "breakpoints": true
     }
   ]
 }

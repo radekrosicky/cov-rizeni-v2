@@ -99,7 +99,7 @@ Doporučení se počítá jen pro **nearchivované** dodávky; po zavedení evid
 - Strážní test schématu (V2-1) dál hlídá, že se termín události neobjeví v jiné tabulce; `need_date_override` je schválená výjimka.
 - Změny údajů se zapisují do **historie** (kdo, kdy, před/po, důvod u vlastního data).
 
-## 6. Změny databáze (migrace `0004` – navrhnu ke schválení až po schválení plánu)
+## 6. Změny databáze (migrace `0004` – návrh ke schválení: [DATABAZE-V2-4.md](DATABAZE-V2-4.md))
 
 Jen **nové sloupce v `material_needs`**, žádná nová tabulka:
 
@@ -146,3 +146,16 @@ Stavy dodávky (`to_confirm`, `archived`) se nemění; „objednáno / dodáno�
 5. **„Co dnes řešit“** – zobrazit už ve V2-4 jednoduchý seznam „po termínu objednání / objednat do 14 dní / ověřit lhůtu /
    chybí termín montáže“ napříč zakázkami, nebo až s evidencí objednávek?
 6. **Předvyplnit událost** při vytváření dodávky nejbližší „Zahájení montáže technologie“ zakázky – souhlasíte?
+
+## 10. Rozhodnutí vlastníka projektu (plán schválen)
+
+1. Posun vůči události jen v **kalendářních dnech**, záporný i kladný.
+2. Základ výpočtu = aktuální **plánované** datum; chybí-li, smluvní – výpočet výrazně **předběžný** s upozorněním,
+   že plánovaný termín není ověřen. **Skutečné** datum proběhlé události = historický fakt, ne základ nového objednávání.
+   Plánovaný termín pozdější než smluvní → upozornění na rozpor.
+3. „Blíží se“ = **14 kalendářních dní před doporučeným termínem objednání** – jiný údaj než bezpečnostní rezerva 14 dní před potřebou.
+4. Dodací lhůta: **neznámá / odhad / potvrzená**. Odhad → orientační datum s „Dodací lhůtu ověřit“; neznámá → datum objednání se nevymýšlí.
+5. „Co dnes řešit“ už ve V2-4: objednání po termínu, do 14 dní, neznámá / neověřená lhůta, chybějící termín montáže;
+   vypočítané z aktuálních dat; netvrdí „neobjednáno“, jen vyzývá k ověření.
+6. Aplikace může **nabídnout** nejbližší událost „zahájení montáže technologie“, ale uživatel ji musí **výslovně potvrdit**
+   (na ČOV může být více etap / linek).

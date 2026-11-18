@@ -142,6 +142,7 @@ docs/             dokumentace
 - [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – tabulky, přístup uživatelů, migrace a její stav
 - [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 a rozhodnutí
 - [docs/PLAN-V2-2.md](docs/PLAN-V2-2.md) / [docs/DATABAZE-V2-2.md](docs/DATABAZE-V2-2.md) – dokumenty: plán, databáze, bezpečnost nahrávání
+- [docs/PLAN-V2-4.md](docs/PLAN-V2-4.md) – plán V2-4 Termíny potřeby a doporučené objednání (návrh ke schválení)
 - [docs/PLAN-V2-3.md](docs/PLAN-V2-3.md) / [docs/DATABAZE-V2-3.md](docs/DATABAZE-V2-3.md) – V2-3 rozpočet a materiál: plán, databáze, ochrana paměti, omezení PGlite
 - [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický model celé aplikace

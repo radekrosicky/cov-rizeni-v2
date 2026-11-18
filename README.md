@@ -31,6 +31,16 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 | „Moje úkoly“; úkoly a připravenost v „Co dnes řešit“ | ⛔ jasně označené prázdné stavy |
 | Skutečné přihlášení e-mailem a heslem | ⛔ samostatná etapa |
 
+## DEMO pro předvedení (větev `v2-demo-vedeni`)
+
+```bash
+npm run demo
+```
+
+Smaže a znovu založí **pouze DEMO data** (`data/demo`, fiktivní zakázka *ČOV Javorová – intenzifikace technologie*,
+termíny podle dnešního dne) a spustí aplikaci na portu 3000. Vývojová databáze se nemění. Scénář a postup klikání:
+[docs/DEMO-PRO-VEDENI.md](docs/DEMO-PRO-VEDENI.md).
+
 ## Spuštění v GitHub Codespaces
 
 1. Na GitHubu přepněte na větev `v2-4-terminy`.
@@ -104,6 +114,8 @@ npm run dev
 | `npm run db:setup` | založí **prázdnou** vývojovou databázi, aplikuje migrace, nahraje fiktivní data; existující nepřepíše |
 | `npm run db:reset` | smaže vývojovou databázi a založí ji znovu s fiktivními daty (aplikace nesmí běžet) |
 | `npm run db:migrate` | doplní nové schválené migrace do existující vývojové databáze |
+| `npm run demo` | DEMO: znovu založí jen `data/demo` s fiktivními daty k dnešnímu dni a spustí aplikaci |
+| `npm run demo:data` | DEMO: jen připraví data (bez spuštění) |
 | `npm run db:check` / `db:generate` | kontrola / vygenerování migrací (nic neaplikuje) |
 
 Nastavení (proměnné prostředí): `MAX_UPLOAD_MB` – limit velikosti souboru (výchozí 50),

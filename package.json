@@ -18,6 +18,8 @@
     "db:setup": "node scripts/db-setup.ts",
     "db:reset": "node scripts/db-setup.ts --reset",
     "db:migrate": "node scripts/db-migrate.ts",
+    "demo": "node scripts/demo.ts",
+    "demo:data": "node scripts/demo.ts --jen-data",
     "test:e2e": "playwright test --trace off"
   },
   "engines": {

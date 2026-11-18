@@ -37,8 +37,8 @@ const ev = (kind: string, title: string, dates: { contractDate?: string; planned
   note: null,
 });
 
-/** Fiktivní data. S úložištěm `storage` vzniknou i fiktivní dokumenty (jinak jen zakázky a události). */
-export async function seedDevData(db: Db, storage?: FileStorage) {
+/** Fiktivní uživatelé (správce, zástupce, 2 sledující) – společné pro vývojová i DEMO data. */
+export async function seedDevUsers(db: Db): Promise<[SessionActor, SessionActor, SessionActor, SessionActor]> {
   const [admin] = await db.insert(users).values({ ...DEV_USERS[0], isDevIdentity: true }).returning();
   const others = await db
     .insert(users)
@@ -48,7 +48,12 @@ export async function seedDevData(db: Db, storage?: FileStorage) {
     await writeHistory(db, { actorId: admin!.id, projectId: null, entityType: "user", entityId: u.id, action: "create", changes: { globalRole: { before: null, after: u.globalRole } }, reason: "Fiktivní vývojová data" });
   }
   const [deputy, viewer1, viewer2] = others.map(asActor) as [SessionActor, SessionActor, SessionActor];
-  const sa = asActor(admin!);
+  return [asActor(admin!), deputy, viewer1, viewer2];
+}
+
+/** Fiktivní data. S úložištěm `storage` vzniknou i fiktivní dokumenty (jinak jen zakázky a události). */
+export async function seedDevData(db: Db, storage?: FileStorage) {
+  const [sa, deputy, viewer1, viewer2] = await seedDevUsers(db);
 
   // 1) Zakázka v realizaci; vedoucí zástupce; sledující 1 jen čte. Dvě montáže stejného typu (linka 1 a 2).
   const p1 = await createProject(db, deputy, { name: "ČOV Fiktivín – intenzifikace", projectType: "intensification", projectTypeNote: null, leaderUserId: deputy.id, clientName: "Obec Fiktivín (smyšlený objednatel)" });

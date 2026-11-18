@@ -4,8 +4,9 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 **Není to ERP.** Hlavní otázka: *„Co dnes musím řešit a proč?“*
 
 > **Stav: etapa V2-4 – Termíny materiálu a doporučené objednání** (navazuje na V2-1 až V2-3; V2-2 a V2-3 zatím nejsou uživatelsky ověřené).
-> Pouze fiktivní data. Skutečné přihlášení zatím neexistuje – ve vývojovém režimu se volí
-> **fiktivní vývojová identita** (není to zabezpečení; v produkčním režimu je technicky vypnutá).
+> Pouze fiktivní data. Skutečné přihlášení zatím neexistuje. Po otevření webu se vždy zobrazí **vstupní obrazovka**;
+> ve vývojovém režimu se na ní volí **fiktivní identita** („POUZE TESTOVACÍ REŽIM – nejde o zabezpečené přihlášení“).
+> V produkčním režimu je výběr vypnutý a aplikace zůstává **uzavřená** (viz [docs/PRIHLASENI.md](docs/PRIHLASENI.md)).
 
 ## Co funguje (V2-1 až V2-4)
 
@@ -17,13 +18,14 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 | Vedoucí zakázky je vždy členem s úpravami a nikdy sledující (hlídá i databáze) | ✅ |
 | Historie změn (jen přidávání), čtou ji i sledující | ✅ |
 | Ochrana před tichým přepsáním souběžných úprav | ✅ |
+| Povinná vstupní obrazovka; bez identity žádná navigace ani data; „Odhlásit se“; produkce uzavřená | ✅ |
 | Fiktivní vývojové identity (jen `npm run dev`) | ✅ |
 | **Dokumenty:** nahrání, seznam s filtrem podle druhu, otevřít / stáhnout, revize (aktuální / nahrazená), změna aktuální revize s důvodem, archivace s důvodem, historie | ✅ V2-2 |
 | Kontrola typu souboru podle obsahu (PDF, XLSX, DOCX, JPG, PNG, WEBP, HEIC, TIFF, DWG, DXF; XLSX/DOCX včetně struktury a rozbaleného obsahu), limit 50 MB | ✅ V2-2 |
 | **Rozpočet:** načtení XLSX z Dokumentů, náhled listů, potvrzení sloupců, kontrola nejednoznačných položek, uložení; původní hodnoty dohledatelné | ✅ V2-3 |
 | **Sledované dodávky:** z jedné položky, sloučení, rozdělení, ruční bez Excelu, důvod sledování, odpovědný („Nepřiřazeno“) | ✅ V2-3 |
 | **Termíny:** montážní událost + posun, dodací lhůta (neznámá / odhad / potvrzená, kalendářní či pracovní dny, 0 = skladem), rezerva 14 dní; doporučené datum objednání s vysvětlením výpočtu, české svátky, automatický přepočet při posunu montáže | ✅ V2-4 |
-| **Co dnes řešit:** materiál napříč přidělenými zakázkami (ověřit stav objednávky, objednat do 14 dní, chybějící termín montáže, neověřená dodací lhůta) | ✅ V2-4 |
+| **Co dnes řešit:** klikací karty s konkrétní akcí („Objednat: …“, „Ověřit objednání: …“), zakázkou a krátkým odpočtem („Nejpozději za 3 dny“, „Po termínu o 2 dny“, „Termín neznámý“), řazené podle naléhavosti | ✅ V2-4 |
 | Evidence skutečných objednávek a dodání | ⛔ další etapa |
 | Detail zakázky – záložky Úkoly, Připravenost | ⛔ jasně označené prázdné stavy |
 | „Moje úkoly“; úkoly a připravenost v „Co dnes řešit“ | ⛔ jasně označené prázdné stavy |
@@ -39,7 +41,7 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
    ```bash
    npm run dev
    ```
-5. Otevřete port 3000 (**Open in Browser**). Klikněte na **Vybrat fiktivní identitu** a zvolte např. *Zástupce*.
+5. Otevřete port 3000 (**Open in Browser**). Zobrazí se vstupní obrazovka – zvolte např. *Zástupce*. Otevře se „Co dnes řešit“.
 
 Port 3000 nechte **soukromý** (výchozí). Nikdy ho nepřepínejte na „Public“.
 
@@ -124,7 +126,7 @@ src/
   server/
     app.ts        vstup pro obrazovky: služby s připojenou databází
     services/     případy užití: oprávnění + transakce + historie + kontrola verze
-    identity/     fiktivní vývojová identita (později skutečné přihlášení)
+    identity/     vstup do aplikace: režim, brána pro proxy, fiktivní identita (později skutečné přihlášení)
     db/           schéma, připojení, migrace, pravidla schématu
     storage/      úložiště souborů (rozhraní + místní vývojové úložiště; později firemní úložiště)
     documents/    kontrola nahraných souborů podle obsahu
@@ -147,6 +149,7 @@ docs/             dokumentace
 - [docs/PLAN-V2-2.md](docs/PLAN-V2-2.md) / [docs/DATABAZE-V2-2.md](docs/DATABAZE-V2-2.md) – dokumenty: plán, databáze, bezpečnost nahrávání
 - [docs/PLAN-V2-4.md](docs/PLAN-V2-4.md) / [docs/DATABAZE-V2-4.md](docs/DATABAZE-V2-4.md) – V2-4 termíny potřeby a doporučené objednání: plán, migrace 0004, implementace
 - [docs/PLAN-V2-3.md](docs/PLAN-V2-3.md) / [docs/DATABAZE-V2-3.md](docs/DATABAZE-V2-3.md) – V2-3 rozpočet a materiál: plán, databáze, ochrana paměti, omezení PGlite
+- [docs/PRIHLASENI.md](docs/PRIHLASENI.md) – vstupní obrazovka, uzavřená produkce, návrh skutečného přihlášení e-mailem a heslem
 - [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický model celé aplikace
 - [docs/PREVZETI-Z-V1.md](docs/PREVZETI-Z-V1.md) – co se převzalo / lze převzít z V1

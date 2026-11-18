@@ -7,27 +7,14 @@ import type { Schedule } from "./schedule.ts";
 export const TODAY_GROUPS = ["verify_order", "order_soon", "missing_date", "lead_time"] as const;
 export type TodayGroup = (typeof TODAY_GROUPS)[number];
 
-export const TODAY_GROUP_INFO: Record<TodayGroup, { title: string; why: string; tone: "problem" | "risk" | "unverified" }> = {
-  verify_order: {
-    title: "Ověřte stav objednávky",
-    why: "Doporučený termín objednání uplynul (nebo montáž už proběhla). Aplikace zatím objednávky neeviduje – ověřte, zda je objednáno.",
-    tone: "problem",
-  },
-  order_soon: {
-    title: "Objednat do 14 dní",
-    why: "Doporučený termín objednání je do 14 kalendářních dní. Ověřte stav objednávky a případně objednejte.",
-    tone: "risk",
-  },
-  missing_date: {
-    title: "Doplnit nebo ověřit termín montáže",
-    why: "Bez ověřeného termínu nelze spolehlivě určit, kdy objednat.",
-    tone: "unverified",
-  },
-  lead_time: {
-    title: "Ověřit dodací lhůtu",
-    why: "Dodací lhůta je neznámá nebo jen odhad – zeptejte se dodavatele.",
-    tone: "unverified",
-  },
+/** Závažnost karty (jemné barevné odlišení; barva vždy doplněná textem akce). */
+export type TodayTone = "problem" | "risk" | "unverified";
+
+export const TODAY_GROUP_TONE: Record<TodayGroup, TodayTone> = {
+  verify_order: "problem",
+  order_soon: "risk",
+  missing_date: "unverified",
+  lead_time: "unverified",
 };
 
 /** Do které skupiny dodávka patří (každá jen do jedné – nejnaléhavější). null = dnes nic řešit. */
@@ -54,9 +41,42 @@ export function todayGroupOf(s: Schedule): TodayGroup | null {
   }
 }
 
-/** Řazení uvnitř skupiny: nejdřívější termín první, bez termínu na konec. */
-export function todaySortKey(s: Schedule): IsoDate {
-  return s.orderBy ?? s.deliverBy ?? s.needDate ?? "9999-12-31";
+const plural = (n: number) => (n === 1 ? "den" : n >= 2 && n <= 4 ? "dny" : "dní");
+
+/**
+ * Konkrétní akce na kartě „Co dnes řešit“ – krátce, bez vysvětlování.
+ * Objednávky zatím neevidujeme: u prošlého termínu „Ověřit objednání“, nikdy „neobjednáno“.
+ */
+export function todayAction(s: Schedule, group: TodayGroup): string {
+  switch (group) {
+    case "verify_order":
+      return "Ověřit objednání";
+    case "order_soon":
+      return "Objednat";
+    case "missing_date":
+      return s.basis === "contract" ? "Ověřit termín montáže" : "Doplnit termín montáže";
+    case "lead_time":
+      return "Ověřit dodací lhůtu";
+  }
+}
+
+/** Krátký časový údaj vůči DNEŠKU (počítá se při každém zobrazení). */
+export function todayWhen(s: Schedule): string {
+  if (s.state === "event_happened") return "Montáž už proběhla";
+  if (s.orderBy === null || s.daysToOrder === null) return "Termín neznámý";
+  const d = s.daysToOrder;
+  if (d < 0) return `Po termínu o ${-d} ${plural(-d)}`;
+  if (d === 0) return "Dnes";
+  if (d === 1) return "Nejpozději zítra";
+  return `Nejpozději za ${d} ${plural(d)}`;
+}
+
+const GROUP_RANK: Record<TodayGroup, number> = { verify_order: 0, order_soon: 1, missing_date: 2, lead_time: 3 };
+
+/** Řazení podle naléhavosti: po termínu → do 14 dní → chybí termín → ověřit lhůtu; uvnitř podle data. */
+export function compareTodayUrgency(a: { group: TodayGroup; schedule: Schedule; name: string }, b: { group: TodayGroup; schedule: Schedule; name: string }): number {
+  const key = (x: Schedule): IsoDate => x.orderBy ?? x.deliverBy ?? x.needDate ?? x.basisDate ?? "9999-12-31";
+  return GROUP_RANK[a.group] - GROUP_RANK[b.group] || key(a.schedule).localeCompare(key(b.schedule)) || a.name.localeCompare(b.name, "cs");
 }
 
 export interface SuggestableEvent {

@@ -140,8 +140,12 @@ describe("listTodayMaterial – „Co dnes řešit“ napříč přidělenými z
     await seedDevMaterial(db, { users: [admin, deputy, viewer1, viewer2], projects: [p1, p2, p3] });
   });
 
-  const names = (d: Awaited<ReturnType<typeof listTodayMaterial>>) =>
-    Object.fromEntries(Object.entries(d.groups).map(([g, items]) => [g, items.map((i) => i.needName).sort()]));
+  const names = (d: Awaited<ReturnType<typeof listTodayMaterial>>) => {
+    const out: Record<string, string[]> = { verify_order: [], order_soon: [], missing_date: [], lead_time: [] };
+    for (const i of d.items) out[i.group]!.push(i.needName);
+    for (const k of Object.keys(out)) out[k]!.sort();
+    return out;
+  };
 
   it("fiktivní data k 18. 11. 2026: skupiny podle vypočtených termínů", async () => {
     const d = await listTodayMaterial(db, deputy, "2026-11-18");
@@ -151,9 +155,21 @@ describe("listTodayMaterial – „Co dnes řešit“ napříč přidělenými z
       missing_date: ["Dmychadla – strojovna (fiktivní)", "Membránové difuzory (fiktivní)"],
       lead_time: ["Rozvaděč RM1 (fiktivní)"],
     });
-    const soon = d.groups.order_soon[0]!;
+    const soon = d.items.find((i) => i.group === "order_soon")!;
     expect(soon.schedule.orderBy).toBe("2026-12-02");
     expect(soon.projectName).toMatch(/Fiktivín/);
+    // Karty: konkrétní akce + krátký časový údaj, seřazeno podle naléhavosti, každá dodávka jednou.
+    expect(d.items.map((i) => `${i.action}: ${i.needName} · ${i.when}`)).toEqual([
+      "Ověřit objednání: Česle strojně stírané (fiktivní) · Po termínu o 61 dní",
+      "Objednat: Náhradní díly kalových čerpadel (fiktivní) · Nejpozději za 14 dní",
+      "Doplnit termín montáže: Dmychadla – strojovna (fiktivní) · Termín neznámý",
+      "Doplnit termín montáže: Membránové difuzory (fiktivní) · Termín neznámý",
+      "Ověřit dodací lhůtu: Rozvaděč RM1 (fiktivní) · Termín neznámý",
+    ]);
+    expect(new Set(d.items.map((i) => i.needId)).size).toBe(d.items.length);
+    // Denní odpočet se mění s datem.
+    const next = await listTodayMaterial(db, deputy, "2026-11-19");
+    expect(next.items.find((i) => i.group === "order_soon")!.when).toBe("Nejpozději za 13 dní");
     // Dmychadla (objednat do 28. 12.) a spojovací materiál (skladem) dnes řešit nemusíme.
   });
 
@@ -163,7 +179,7 @@ describe("listTodayMaterial – „Co dnes řešit“ napříč přidělenými z
   });
 
   it("oprávnění: sledující 1 jen Fiktivín, sledující 2 jen Testovice, správce vše", async () => {
-    const all = (d: Awaited<ReturnType<typeof listTodayMaterial>>) => new Set(Object.values(d.groups).flat().map((i) => i.projectName));
+    const all = (d: Awaited<ReturnType<typeof listTodayMaterial>>) => new Set(d.items.map((i) => i.projectName));
     expect([...all(await listTodayMaterial(db, viewer1, "2026-11-18"))]).toEqual(["ČOV Fiktivín – intenzifikace"]);
     expect([...all(await listTodayMaterial(db, viewer2, "2026-11-18"))]).toEqual(["ČOV Testovice – nová ČOV"]);
     expect(all(await listTodayMaterial(db, admin, "2026-11-18")).size).toBe(2);
@@ -183,7 +199,7 @@ describe("listTodayMaterial – „Co dnes řešit“ napříč přidělenými z
   it("žádný text v přehledu netvrdí „neobjednáno“", async () => {
     for (const today of ["2026-11-18", "2027-01-15", "2027-06-01"]) {
       const d = await listTodayMaterial(db, admin, today);
-      const texts = Object.values(d.groups).flat().flatMap((i) => [i.schedule.headline, ...i.schedule.warnings.map((w) => w.text)]);
+      const texts = d.items.flatMap((i) => [i.action, i.when, i.schedule.headline, ...i.schedule.warnings.map((w) => w.text)]);
       expect(texts.join(" ")).not.toMatch(/neobjedn/i);
     }
   });

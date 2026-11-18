@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { MEMBER_ACCESS_LABELS, PROJECT_TYPE_LABELS } from "@/domain/values";
-import { identityMode } from "@/server/identity/session";
 import { ProjectStatusBadge } from "@/ui/Badges";
 import { IdentityGate } from "@/ui/Notices";
 import { loadProject } from "./data";
@@ -10,7 +9,7 @@ import { ProjectTabs } from "./ProjectTabs";
 export default async function ProjectLayout({ children, params }: { children: ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
   const loaded = await loadProject(id);
-  if (!loaded) return <IdentityGate mode={identityMode()} />;
+  if (!loaded) return <IdentityGate />;
   const { project, membership, can } = loaded.detail;
   const accessLabel = loaded.actor.globalRole === "admin" ? "Správce – plný přístup" : can.edit ? MEMBER_ACCESS_LABELS.edit : MEMBER_ACCESS_LABELS.read;
   return (

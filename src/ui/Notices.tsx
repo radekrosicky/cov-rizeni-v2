@@ -12,29 +12,14 @@ export function SavedNotice({ show, children = "Změna byla uložena." }: { show
   );
 }
 
-/** Obrazovka bez přihlášeného uživatele. Ve vývoji nabídne výběr fiktivní identity, v produkci nic. */
-export function IdentityGate({ mode }: { mode: "dev" | "none" }) {
+/** Pojistka, kdyby stránka přesto běžela bez identity (rozvržení aplikace ji jinak přesměruje na vstup). */
+export function IdentityGate() {
   return (
     <section className="rounded-xl bg-white p-6 shadow-sm">
-      {mode === "dev" ? (
-        <>
-          <h1 className="text-xl font-bold text-slate-900">Vyberte fiktivní identitu</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Skutečné přihlášení zatím neexistuje. Ve vývojovém režimu si vyberte jednoho z fiktivních uživatelů.
-          </p>
-          <Link href="/vyvoj/identita" className={`${btnPrimary} mt-4`}>
-            Vybrat fiktivní identitu
-          </Link>
-        </>
-      ) : (
-        <>
-          <h1 className="text-xl font-bold text-slate-900">Přihlášení zatím není k dispozici</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Tato verze aplikace nemá skutečné přihlášení, proto nezobrazuje žádná data. Vývojové identity jsou v tomto
-            režimu vypnuté.
-          </p>
-        </>
-      )}
+      <h1 className="text-xl font-bold text-slate-900">Nejste přihlášeni</h1>
+      <Link href="/prihlaseni" className={`${btnPrimary} mt-4`}>
+        Přejít na přihlášení
+      </Link>
     </section>
   );
 }

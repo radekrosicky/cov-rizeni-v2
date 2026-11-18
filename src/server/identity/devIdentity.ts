@@ -9,13 +9,11 @@ import type { Db } from "../db/client.ts";
 import { users } from "../db/schema.ts";
 import { isUuid, type SessionActor } from "../services/common.ts";
 
-export const DEV_IDENTITY_COOKIE = "cov_dev_identity";
+import { devIdentitiesEnabled } from "./mode.ts";
+
+export { DEV_IDENTITY_COOKIE, devIdentitiesEnabled } from "./mode.ts";
 
 type Env = Record<string, string | undefined>;
-
-export function devIdentitiesEnabled(env: Env): boolean {
-  return env.NODE_ENV === "development" && env.DEV_IDENTITIES === "enabled";
-}
 
 /** Uživatel z hodnoty cookie – jen fiktivní, aktivní a jen při zapnutých vývojových identitách. */
 export async function resolveDevActor(db: Db, env: Env, cookieValue: string | undefined): Promise<SessionActor | null> {

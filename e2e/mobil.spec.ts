@@ -7,7 +7,7 @@ test("hlavní obrazovky V2-1 se na mobilu nevodorovně neposouvají", async ({ p
   await page.getByRole("link", { name: /Fiktivín/ }).click();
   await page.waitForURL(/\/zakazky\/[0-9a-f-]{36}$/);
   const detail = new URL(page.url()).pathname;
-  for (const path of ["/", "/zakazky", detail, `${detail}/udalosti/nova`, `${detail}/historie`, `${detail}/clenove`, "/zakazky/nova", "/vyvoj/identita", `${detail}/dokumenty`, `${detail}/dokumenty/novy`, `${detail}/material`, `${detail}/material/polozky`, `${detail}/material/import`, `${detail}/material/nova`]) {
+  for (const path of ["/", "/zakazky", detail, `${detail}/udalosti/nova`, `${detail}/historie`, `${detail}/clenove`, "/zakazky/nova", `${detail}/dokumenty`, `${detail}/dokumenty/novy`, `${detail}/material`, `${detail}/material/polozky`, `${detail}/material/import`, `${detail}/material/nova`]) {
     await page.goto(path);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, path).toBeLessThanOrEqual(0);
@@ -26,4 +26,15 @@ test("hlavní obrazovky V2-1 se na mobilu nevodorovně neposouvají", async ({ p
   await page.goto(detail);
   const box = await page.getByRole("link", { name: "+ Přidat událost" }).boundingBox();
   expect(box!.height).toBeGreaterThanOrEqual(44);
+  // „Co dnes řešit“: karty na celou šířku, pohodlné pro dotyk.
+  await page.goto("/");
+  const card = await page.getByRole("list", { name: "Akce na dnes" }).getByRole("link").first().boundingBox();
+  expect(card!.height).toBeGreaterThanOrEqual(56);
+  expect(card!.width).toBeGreaterThan(300);
+  // Vstupní obrazovka (po odhlášení) na mobilu.
+  await page.getByRole("button", { name: "Odhlásit se" }).click();
+  await page.waitForURL("**/prihlaseni");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  const btn = await page.getByRole("button", { name: /^Zástupce \(fiktivní\)/ }).boundingBox();
+  expect(btn!.height).toBeGreaterThanOrEqual(44);
 });

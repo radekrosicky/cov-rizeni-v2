@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { canGlobal } from "@/domain/access/permissions";
-import { getCurrentActor, identityMode } from "@/server/identity/session";
+import { getCurrentActor } from "@/server/identity/session";
 import { listLeaderCandidates } from "@/server/app";
 import { ActionForm } from "@/ui/Form";
 import { IdentityGate } from "@/ui/Notices";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Nová zakázka" };
 
 export default async function NewProjectPage() {
   const actor = await getCurrentActor();
-  if (!actor) return <IdentityGate mode={identityMode()} />;
+  if (!actor) return <IdentityGate />;
   if (!canGlobal(actor, "project.create").allowed) {
     return (
       <section className={card}>

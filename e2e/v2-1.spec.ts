@@ -6,10 +6,12 @@ test.describe.configure({ mode: "serial" });
 
 let projectUrl = "";
 
-test("bez identity se nic nezobrazí – jen výzva k výběru fiktivní identity", async ({ page }) => {
+test("bez identity se nic nezobrazí – jen vstupní obrazovka s výběrem fiktivní identity", async ({ page }) => {
   await page.goto("/zakazky");
+  await page.waitForURL("**/prihlaseni");
   await expect(page.getByRole("heading", { name: "Vyberte fiktivní identitu" })).toBeVisible();
-  await expect(page.getByText("VÝVOJOVÁ IDENTITA – NENÍ ZABEZPEČENO")).toBeVisible();
+  await expect(page.getByText("POUZE TESTOVACÍ REŽIM – nejde o zabezpečené přihlášení")).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Hlavní navigace" })).toHaveCount(0);
 });
 
 test("zástupce založí zakázku a dvě události stejného typu", async ({ page }) => {

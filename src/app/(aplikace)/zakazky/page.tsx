@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { canGlobal } from "@/domain/access/permissions";
 import { PROJECT_TYPE_LABELS } from "@/domain/values";
-import { getCurrentActor, identityMode } from "@/server/identity/session";
+import { getCurrentActor } from "@/server/identity/session";
 import { listProjects } from "@/server/app";
 import { EventDateBadge, ProjectStatusBadge } from "@/ui/Badges";
 import { IdentityGate } from "@/ui/Notices";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Zakázky" };
 
 export default async function ProjectsPage() {
   const actor = await getCurrentActor();
-  if (!actor) return <IdentityGate mode={identityMode()} />;
+  if (!actor) return <IdentityGate />;
   const items = await listProjects(actor);
   const canCreate = canGlobal(actor, "project.create").allowed;
   return (

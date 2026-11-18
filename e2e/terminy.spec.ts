@@ -83,17 +83,23 @@ test("lhůta 0 dní (skladem) a vlastní datum s důvodem", async ({ page }) => 
   await expect(page.getByRole("definition").filter({ hasText: "0 kalendářních dní (skladem)" })).toBeVisible();
 });
 
-test("„Co dnes řešit“: přehled napříč zakázkami; netvrdí „neobjednáno“", async ({ page }) => {
+test("„Co dnes řešit“: klikací karty s akcí a krátkým časovým údajem; netvrdí „neobjednáno“", async ({ page }) => {
   await signInAs(page, "Zástupce");
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Ověřte stav objednávky/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Doplnit nebo ověřit termín montáže/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Ověřit dodací lhůtu/ })).toBeVisible();
-  await expect(page.locator("li", { hasText: "Česle strojně stírané (fiktivní)" })).toContainText("ověřte, zda je objednáno");
-  await expect(page.locator("li", { hasText: "Rozvaděč RM1 (fiktivní)" })).toContainText("Nepřiřazeno");
-  await expect(page.locator("li", { hasText: "Dmychadla – strojovna (fiktivní)" })).toContainText("ČOV Testovice");
+  const cards = page.getByRole("list", { name: "Akce na dnes" }).getByRole("link");
+  // Nejnaléhavější první: prošlý termín → „Ověřit objednání“ (nikdy „neobjednáno“).
+  await expect(cards.first()).toContainText("Ověřit objednání: Česle strojně stírané (fiktivní)");
+  await expect(cards.first()).toContainText(/ČOV Fiktivín – intenzifikace · Po termínu o \d+ (den|dny|dní)/);
+  await expect(page.getByRole("link", { name: /Ověřit dodací lhůtu: Rozvaděč RM1 \(fiktivní\).*Termín neznámý/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Doplnit termín montáže: Dmychadla – strojovna \(fiktivní\).*ČOV Testovice/ })).toBeVisible();
+  // Každá dodávka nejvýše jednou; podrobnosti (lhůty, rezervy, výpočty) na přehledu nejsou.
+  const texts = await cards.allInnerTexts();
+  expect(new Set(texts).size).toBe(texts.length);
   await expect(page.getByText(/neobjednáno/i)).toHaveCount(0);
-  await page.locator("li", { hasText: "Rozvaděč RM1 (fiktivní)" }).getByRole("link", { name: "Otevřít dodávku" }).click();
+  await expect(page.getByText("Jak se datum vypočítalo")).toHaveCount(0);
+  await expect(page.getByText(/rezerva|dodací lhůta \d/i)).toHaveCount(0);
+  // Celá karta je odkaz na detail dodávky.
+  await page.getByRole("link", { name: /Ověřit dodací lhůtu: Rozvaděč RM1/ }).click();
   await expect(page.getByTestId("order-by")).toHaveText("nelze určit");
   await expect(page.getByText("Dodací lhůta není známá – zeptejte se dodavatele.", { exact: false })).toBeVisible();
 });
@@ -101,7 +107,7 @@ test("„Co dnes řešit“: přehled napříč zakázkami; netvrdí „neobjedn
 test("sledující: vidí termíny a přehled svých zakázek, ale nic nemění", async ({ page }) => {
   await signInAs(page, "Sledující 1");
   await page.goto("/");
-  await expect(page.locator("li", { hasText: "Česle strojně stírané (fiktivní)" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Ověřit objednání: Česle strojně stírané/ })).toBeVisible();
   await expect(page.getByText("ČOV Testovice")).toHaveCount(0);
   await openNeed(page, "Dmychadla D1–D2 (fiktivní)");
   await expect(page.getByTestId("order-by")).toHaveText("28. 12. 2026");

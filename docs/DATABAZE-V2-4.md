@@ -104,3 +104,13 @@ nejpozději“ (u víkendu / svátku předchozí pracovní den).
   termín v seznamu dodávek, **Navázané dodávky** v úpravě události, hlavní stránka **Co dnes řešit**.
 - Fiktivní ukázková data: `src/server/seed/devSeedMaterial.ts` (7 dodávek; vznikají přes `npm run db:setup` / `db:reset`).
 - Snímky: `docs/predvedeni-v2-4/`.
+
+## 8. Úpravy po vyzkoušení (bez změny databáze)
+
+- **„Co dnes řešit“ zjednodušeno:** jen klikací karty (celá karta otevře detail dodávky) se dvěma řádky – konkrétní akce
+  („Objednat: …“, „Ověřit objednání: …“, „Ověřit dodací lhůtu: …“, „Doplnit / Ověřit termín montáže: …“) a podřádek
+  „zakázka · časový údaj“ („Nejpozději za 14 dní“, „Nejpozději zítra“, „Dnes“, „Po termínu o 2 dny“, „Termín neznámý“).
+  Odpočet se počítá při každém otevření podle dnešního data. Každá dodávka nejvýše jednou, řazení podle naléhavosti,
+  jemný barevný proužek. Podrobnosti (montáž, lhůty, rezervy, výpočet) jen v detailu. Na monitoru 2–3 sloupce, na mobilu
+  jeden. Pozn.: názvy dodávek se nedají spolehlivě automaticky skloňovat, proto tvar „Akce: Název“.
+- **Povinná vstupní obrazovka** – viz [PRIHLASENI.md](PRIHLASENI.md).

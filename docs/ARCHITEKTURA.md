@@ -6,6 +6,8 @@ Původně: etapa V2-1. Všechny vrstvy existují včetně `server` (databáze PG
 Konvence importů: `src/domain` a `src/server` používají **relativní importy s příponou `.ts`**, aby šly
 databázové skripty spouštět přímo v Node.js (bez další knihovny). Obrazovky (`src/app`, `src/ui`) používají `@/…`
 a k serveru přistupují jen přes `src/server/app.ts` a `src/server/identity/session.ts` (hlídá lint).
+Obrazovky s daty jsou ve skupině `src/app/(aplikace)/` – její rozvržení vyžaduje ověřenou identitu; bez ní jen
+`src/app/prihlaseni/`. Před každým požadavkem běží `src/proxy.ts` (viz docs/PRIHLASENI.md).
 
 ## Proč Next.js + TypeScript
 

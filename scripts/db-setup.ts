@@ -8,6 +8,7 @@ import fs from "node:fs";
 import { openDb, resolveDatabaseDir } from "../src/server/db/client.ts";
 import { applyMigrations, pendingApproval } from "../src/server/db/migrate.ts";
 import { seedDevData } from "../src/server/seed/devSeed.ts";
+import { seedDevMaterial } from "../src/server/seed/devSeedMaterial.ts";
 import { LocalFileStorage, resolveFilesDir } from "../src/server/storage/localFileStorage.ts";
 
 const args = new Set(process.argv.slice(2));
@@ -40,7 +41,8 @@ try {
   await applyMigrations(db, { requireApproval: process.env.ALLOW_UNAPPROVED_MIGRATIONS !== "e2e-test-db" });
   console.log("Migrace aplikovány na prázdnou databázi.");
   const seeded = await seedDevData(db, new LocalFileStorage(filesDir));
-  console.log(`Fiktivní data: ${seeded.users.length} uživatelé, ${seeded.projects.length} zakázky, fiktivní dokumenty v ${filesDir}.`);
+  await seedDevMaterial(db, seeded);
+  console.log(`Fiktivní data: ${seeded.users.length} uživatelé, ${seeded.projects.length} zakázky, fiktivní dokumenty v ${filesDir}, fiktivní dodávky s termíny.`);
 } finally {
   await client.close();
 }

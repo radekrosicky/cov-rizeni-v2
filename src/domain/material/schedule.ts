@@ -196,7 +196,13 @@ export function computeSchedule(input: ScheduleInput, today: IsoDate, options: S
   }
   let orderBy: IsoDate;
   const lead = input.leadTimeDays;
-  if (input.leadTimeUnit === "working") {
+  if (lead === 0) {
+    // Skladem / ihned k dispozici: objednat nejpozději v den „dodat nejpozději“ (nebo předchozí pracovní den).
+    orderBy = previousWorkingDay(deliverBy);
+    const shift = orderBy !== deliverBy ? `; ${cz(deliverBy)} je ${nonWorkingReason(deliverBy)} → předchozí pracovní den ${cz(orderBy)}` : "";
+    if (shift) warnings.push({ code: "order_date_shifted", text: `${cz(deliverBy)} je ${nonWorkingReason(deliverBy)} → objednání posunuto na předchozí pracovní den ${cz(orderBy)}.` });
+    steps.push(`Dodací lhůta 0 dní (skladem, k dispozici ihned) → objednat nejpozději ${cz(orderBy)}${shift}.`);
+  } else if (input.leadTimeUnit === "working") {
     orderBy = addWorkingDays(deliverBy, -lead);
     steps.push(`Dodací lhůta ${dayCount(lead, "working")} (bez víkendů a svátků) → objednat nejpozději ${cz(orderBy)}.`);
   } else {

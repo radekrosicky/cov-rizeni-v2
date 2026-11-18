@@ -5,9 +5,11 @@ import { getNeed, listResponsibleCandidates } from "@/server/app";
 import { ActionForm, TextArea, TextField } from "@/ui/Form";
 import { SavedNotice } from "@/ui/Notices";
 import { btnDanger, btnSecondary, card } from "@/ui/styles";
-import { archiveNeedAction, removeSourceAction, unarchiveNeedAction, updateNeedAction, updateSourceAction } from "../../../materialActions";
+import { archiveNeedAction, removeSourceAction, unarchiveNeedAction, updateNeedAction, updateNeedScheduleAction, updateSourceAction } from "../../../materialActions";
 import { fmtQty, load } from "../data";
 import { NeedFields } from "../NeedFields";
+import { ScheduleFields } from "../ScheduleFields";
+import { ScheduleCard } from "../ScheduleView";
 
 export const metadata: Metadata = { title: "Dodávka" };
 
@@ -17,6 +19,7 @@ const SAVED: Record<string, string> = {
   odebrano: "Položka byla z dodávky odebrána (záznam je v historii).",
   archiv: "Dodávka byla archivována.",
   obnoveno: "Dodávka byla obnovena.",
+  terminy: "Termín potřeby a dodací lhůta byly uloženy. Doporučené objednání se přepočítalo.",
 };
 
 export default async function NeedPage({ params, searchParams }: { params: Promise<{ id: string; needId: string }>; searchParams: Promise<{ ulozeno?: string }> }) {
@@ -59,13 +62,40 @@ export default async function NeedPage({ params, searchParams }: { params: Promi
             <dd className={d.responsibleName ? "" : "font-semibold text-signal-risk"}>{d.responsibleName ?? "Nepřiřazeno"}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Termíny objednání a dodání</dt>
-            <dd className="text-slate-500">přijdou v další etapě (V2-4)</dd>
+            <dt className="text-slate-500">Dodací lhůta</dt>
+            <dd className={n.leadTimeDays === null ? "font-semibold text-signal-unverified" : ""}>{d.leadTime}</dd>
           </div>
         </dl>
         {n.note && <p className="mt-2 text-sm text-slate-700">{n.note}</p>}
         {n.status === "archived" && <p className="mt-2 rounded-md bg-slate-100 px-3 py-2 text-sm">Archivováno – důvod: {n.archiveReason}</p>}
       </section>
+
+      {n.status !== "archived" && (
+        <section className={card} aria-labelledby="terminy">
+          <h3 id="terminy" className="mb-3 text-lg font-semibold">
+            Termíny
+          </h3>
+          <ScheduleCard schedule={d.schedule} eventTitle={d.event?.title ?? null} />
+          {d.event && d.manage && d.event.status === "active" && (
+            <p className="mt-2 text-sm">
+              <Link href={`/zakazky/${id}/udalosti/${d.event.id}`} className="text-accent-dark underline">
+                Upravit termín události „{d.event.title}“
+              </Link>
+            </p>
+          )}
+          {d.manage && (
+            <details className="mt-4 rounded-lg border border-slate-200 p-3" open={d.schedule.state === "no_need_date"}>
+              <summary className="cursor-pointer text-base font-semibold text-accent-dark">Nastavit termín potřeby, dodací lhůtu a rezervu</summary>
+              <div className="mt-3">
+                <ActionForm action={updateNeedScheduleAction.bind(null, id, needId)} submitLabel="Uložit termíny" submitClassName={btnSecondary}>
+                  <input type="hidden" name="version" value={n.version} />
+                  <ScheduleFields defaults={n} events={d.eventOptions} suggested={d.suggestedEvent} />
+                </ActionForm>
+              </div>
+            </details>
+          )}
+        </section>
+      )}
 
       <section className={card} aria-labelledby="zdroje">
         <div className="flex flex-wrap items-center justify-between gap-2">

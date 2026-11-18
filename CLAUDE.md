@@ -15,7 +15,7 @@
 - Nikdy necommituj přímo do `main`; pracovní větev + pull request.
 - Pouze fiktivní data. Žádné skutečné firemní údaje, jména ani smlouvy.
 - Žádné placené služby ani placená AI API. Nová závislost = zdůvodnit a nechat schválit.
-- Nová migrace = předložit ke schválení před aplikací; do `drizzle/schvalene-migrace.json` až po schválení. Schválené migrace (`0000`–`0003`) neměnit.
+- Nová migrace = předložit ke schválení před aplikací; do `drizzle/schvalene-migrace.json` až po schválení. Schválené migrace (`0000`–`0004`) neměnit.
 - `npm run db:reset` jen s vypnutou aplikací; maže jen vývojovou databázi v `data/`.
 - Nepředstírej neexistující funkce. Žádné falešné přihlášení vydávané za zabezpečení.
 - Neměň repozitář V1 (`radekrosicky/cov-rizeni`).

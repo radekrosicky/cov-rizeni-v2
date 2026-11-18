@@ -1,8 +1,7 @@
-# Databáze V2-4 – návrh migrace `0004_v2_4_terminy` (KE SCHVÁLENÍ)
+# Databáze V2-4 – migrace `0004_v2_4_terminy`
 
-> **Stav: návrh. Migrace NENÍ schválená ani aplikovaná do vývojové databáze.**
-> Není v `drizzle/schvalene-migrace.json`, takže `npm run db:setup` / `db:migrate` ji odmítnou
-> („Migrace čeká na schválení vlastníkem projektu“). Ověřuje se jen na dočasných testovacích databázích.
+> **Stav: SCHVÁLENO vlastníkem projektu** (s úpravou: dodací lhůta 0–730 dní, 0 jen výslovně zadaná).
+> Migrace je v `drizzle/schvalene-migrace.json` a byla aplikována na vývojovou databázi V2 s fiktivními daty.
 
 Cíl etapy: aplikace má jednoduše odpovědět **„Co musím objednat, kdy a proč?“**
 
@@ -16,7 +15,7 @@ schválené migrace `0000`–`0003` beze změny.
 | `need_event_id` | ke které události / milníku materiál potřebujeme (např. „Zahájení montáže technologie – linka 1“) | nepovinné; jen událost **téže zakázky**; zrušenou událost nelze vybrat; událost s navázanou dodávkou nelze smazat |
 | `need_offset_days` | posun vůči události v **kalendářních** dnech | výchozí 0; −365 … +365 (záporné = před událostí, kladné = po ní) |
 | `need_date_override` + `need_date_override_reason` | výjimečně vlastní datum potřeby | jen spolu, důvod nesmí být prázdný; **nelze zároveň s událostí** ani s posunem |
-| `lead_time_days` | dodací lhůta | nepovinné, 1 … 730; **prázdné = neznámá** |
+| `lead_time_days` | dodací lhůta | nepovinné, 0 … 730 (0 = skladem, k dispozici ihned – jen výslovně zadaná); **prázdné = neznámá** |
 | `lead_time_unit` | `calendar` (kalendářní) / `working` (pracovní dny) | jen spolu s lhůtou |
 | `lead_time_status` | `estimate` (odhad) / `confirmed` (potvrzeno dodavatelem) | jen spolu s lhůtou |
 | `reserve_days` | bezpečnostní rezerva před potřebou, **vždy kalendářní dny** | výchozí **14**; 0 … 365; u každé dodávky upravitelná |
@@ -87,9 +86,21 @@ Výsledek: `npm run check` – 366 testů prošlo, build v pořádku; `npm run t
 - evidenci skutečných objednávek a dodání (další etapa) – proto texty jen vyzývají k ověření;
 - žádné nové knihovny, žádné placené služby, jen fiktivní data.
 
-## 6. Po schválení
+## 6. Úprava po schválení: dodací lhůta 0 dní
 
-1. Doplnit `0004_v2_4_terminy` do `drizzle/schvalene-migrace.json`.
-2. V Codespace se zastavenou aplikací spustit `npm run db:migrate` (stávající data zůstanou).
-3. Implementovat obrazovky V2-4 podle `docs/PLAN-V2-4.md` (nabídka nejbližší události „zahájení montáže“ jen jako
-   návrh, který uživatel výslovně potvrdí).
+Vlastník projektu: „Dodací lhůta může být i 0 dní (materiál skladem, dostupný ihned). Hodnota 0 musí být výslovně zadaná,
+nikoli automaticky dosazená při neznámé lhůtě.“ Rozsah je proto **0–730**. Migrace 0004 do té doby nebyla použita
+na žádné trvalé databázi, takže se upravila přímo (schválené 0000–0003 beze změny). Testy: 0 s jednotkou a stavem jde
+uložit; 0 bez jednotky a stavu databáze odmítne; nová dodávka má lhůtu prázdnou (= neznámá), ne 0; formulář prázdný
+počet dní u „odhad / potvrzená“ odmítne a u „neznámá“ nic nedosazuje; výpočet s 0 dává „objednat nejpozději“ = „dodat
+nejpozději“ (u víkendu / svátku předchozí pracovní den).
+
+## 7. Implementace V2-4 (hotovo)
+
+- `src/domain/material/schedule.ts` – výpočet; `scheduleForm.ts` – kontrola formuláře; `today.ts` – skupiny „Co dnes řešit“ a návrh montážní události.
+- `src/server/services/material.ts` – `updateNeedSchedule` (oprávnění + transakce + historie + kontrola verze), výpočet v `getNeed` / `listNeeds` / `listNeedsForEvent`.
+- `src/server/services/today.ts` – „Co dnes řešit“ jen ze zakázek, ke kterým má uživatel přístup; vypočítané, nic se neukládá.
+- Obrazovky: karta **Termíny** v detailu dodávky (velké datum objednání, potřeba / dodat / objednat, upozornění, „Jak se datum vypočítalo“, formulář),
+  termín v seznamu dodávek, **Navázané dodávky** v úpravě události, hlavní stránka **Co dnes řešit**.
+- Fiktivní ukázková data: `src/server/seed/devSeedMaterial.ts` (7 dodávek; vznikají přes `npm run db:setup` / `db:reset`).
+- Snímky: `docs/predvedeni-v2-4/`.

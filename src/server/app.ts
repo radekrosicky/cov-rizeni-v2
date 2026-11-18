@@ -11,6 +11,7 @@ import * as events from "./services/events.ts";
 import * as history from "./services/history.ts";
 import * as members from "./services/members.ts";
 import * as projects from "./services/projects.ts";
+import * as today from "./services/today.ts";
 
 type Tail<F> = F extends (db: never, ...args: infer A) => infer R ? (...args: A) => R : never;
 const bind =
@@ -89,4 +90,11 @@ export const listNeeds = bind(material.listNeeds);
 export const getNeed = bind(material.getNeed);
 export const listResponsibleCandidates = bind(material.listResponsibleCandidates);
 export const getItemsForTracking = bind(material.getItemsForTracking);
+
+// ---------- Termíny materiálu a „Co dnes řešit“ (V2-4) ----------
+export const updateNeedSchedule = bind(material.updateNeedSchedule);
+export const listNeedsForEvent = bind(material.listNeedsForEvent);
+export const listTodayMaterial = bind(today.listTodayMaterial);
 export type { NeedFields, SourceInput } from "./services/material.ts";
+export type { TodayItem } from "./services/today.ts";
+export type { ScheduleFormInput } from "../domain/material/scheduleForm.ts";

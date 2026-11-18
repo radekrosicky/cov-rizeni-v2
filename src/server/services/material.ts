@@ -1,13 +1,17 @@
 // Sledované dodávky materiálu a technologie (V2-3). Nejsou to objednávky ani skladové položky.
 // Množství: v rozpočtu (položka – neměnné) · převzaté do dodávky (vazba) · plánované k zajištění (dodávka).
-// Termíny objednání a dodání přidá V2-4.
-import { and, desc, eq, inArray } from "drizzle-orm";
+// Termín potřeby, dodací lhůta a rezerva (V2-4): ukládá se jen odkaz na událost + posun; termíny se počítají.
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { canProject, effectiveAccess } from "../../domain/access/permissions.ts";
 import { allocationOf } from "../../domain/budget/allocation.ts";
 import { parseNumber } from "../../domain/budget/numbers.ts";
-import { TRACKING_REASONS, type TrackingReason } from "../../domain/values.ts";
+import { formatDateCz, pragueToday, type IsoDate } from "../../domain/calendar/calendar.ts";
+import { computeSchedule, dayCount, type Schedule } from "../../domain/material/schedule.ts";
+import { parseScheduleForm, type ScheduleFormInput } from "../../domain/material/scheduleForm.ts";
+import { suggestAssemblyEvent } from "../../domain/material/today.ts";
+import { LEAD_TIME_STATUS_LABELS, TRACKING_REASONS, type TrackingReason } from "../../domain/values.ts";
 import type { Db, DbOrTx } from "../db/client.ts";
-import { budgetImports, budgetItems, documentRevisions, documents, materialNeeds, materialNeedSources, projectMembers, users } from "../db/schema.ts";
+import { budgetImports, budgetItems, documentRevisions, documents, events, materialNeeds, materialNeedSources, projectMembers, users } from "../db/schema.ts";
 import { DomainError } from "../errors.ts";
 import { conflictError, diff, fromDbError, isUuid, requireProject, requireReason, writeHistory, type SessionActor } from "./common.ts";
 
@@ -389,6 +393,81 @@ export async function unarchiveNeed(db: Db, actor: SessionActor, projectId: stri
   }
 }
 
+// ---------- Termín potřeby a dodací lhůta (V2-4) ----------
+
+type NeedRow = typeof materialNeeds.$inferSelect;
+type EventRow = typeof events.$inferSelect;
+
+/** Vypočtený termín dodávky z AKTUÁLNÍCH údajů (nic se neukládá). */
+export function scheduleOf(n: NeedRow, event: EventRow | null, today: IsoDate): Schedule {
+  return computeSchedule(
+    {
+      event: event ? { name: event.title, status: event.status, contractDate: event.contractDate, plannedDate: event.plannedDate, actualDate: event.actualDate } : null,
+      offsetDays: n.needOffsetDays,
+      dateOverride: n.needDateOverride,
+      dateOverrideReason: n.needDateOverrideReason,
+      leadTimeDays: n.leadTimeDays,
+      leadTimeUnit: n.leadTimeUnit,
+      leadTimeStatus: n.leadTimeStatus,
+      reserveDays: n.reserveDays,
+      responsibleAssigned: n.responsibleUserId !== null,
+      archived: n.status === "archived",
+    },
+    today,
+  );
+}
+
+/** Dodací lhůta slovy pro historii a přehledy. */
+export function leadTimeText(n: Pick<NeedRow, "leadTimeDays" | "leadTimeUnit" | "leadTimeStatus">): string {
+  if (n.leadTimeDays === null || !n.leadTimeUnit || !n.leadTimeStatus) return "neznámá";
+  return `${dayCount(n.leadTimeDays, n.leadTimeUnit)}${n.leadTimeDays === 0 ? " (skladem)" : ""} – ${LEAD_TIME_STATUS_LABELS[n.leadTimeStatus]}`;
+}
+
+const eventText = (e: EventRow | null | undefined) => (e ? e.title : "neurčeno");
+
+export async function updateNeedSchedule(db: Db, actor: SessionActor, projectId: string, needId: string, version: number, input: ScheduleFormInput) {
+  const { fields, errors } = parseScheduleForm(input);
+  if (fields.needEventId && !isUuid(fields.needEventId)) errors.needEventId = "Vyberte událost ze seznamu.";
+  if (Object.keys(errors).length) throw new DomainError("validation", "Formulář obsahuje chyby.", errors);
+  try {
+    await db.transaction(async (tx) => {
+      await requireProject(tx, actor, projectId, "material.manage");
+      const before = await loadNeed(tx, projectId, needId);
+      if (before.status === "archived") throw new DomainError("validation", "Archivovanou dodávku nelze upravit.");
+      const ids = [before.needEventId, fields.needEventId].filter(Boolean) as string[];
+      const evs = ids.length ? await tx.select().from(events).where(and(inArray(events.id, ids), eq(events.projectId, projectId))) : [];
+      const byId = new Map(evs.map((e) => [e.id, e]));
+      if (fields.needEventId) {
+        const ev = byId.get(fields.needEventId);
+        if (!ev) throw new DomainError("validation", "Formulář obsahuje chyby.", { needEventId: "Událost nebyla v této zakázce nalezena." });
+        if (ev.status === "cancelled" && ev.id !== before.needEventId) {
+          throw new DomainError("validation", "Formulář obsahuje chyby.", { needEventId: "Zrušenou událost nelze vybrat. Vyberte jinou." });
+        }
+      }
+      const [after] = await tx
+        .update(materialNeeds)
+        .set({ ...fields, version: before.version + 1, updatedBy: actor.id, updatedAt: new Date() })
+        .where(and(eq(materialNeeds.id, needId), eq(materialNeeds.version, version)))
+        .returning();
+      if (!after) throw conflictError();
+      const changes: Record<string, { before: unknown; after: unknown }> = {};
+      const add = (k: string, b: unknown, a: unknown) => {
+        if (b !== a) changes[k] = { before: b, after: a };
+      };
+      add("needEvent", eventText(byId.get(before.needEventId ?? "")), eventText(byId.get(after.needEventId ?? "")));
+      add("needOffsetDays", before.needOffsetDays, after.needOffsetDays);
+      add("needDateOverride", before.needDateOverride ? formatDateCz(before.needDateOverride) : null, after.needDateOverride ? formatDateCz(after.needDateOverride) : null);
+      add("leadTime", leadTimeText(before), leadTimeText(after));
+      add("reserveDays", before.reserveDays, after.reserveDays);
+      if (Object.keys(changes).length) {
+        await writeHistory(tx, { actorId: actor.id, projectId, entityType: "material_need", entityId: needId, action: "update", changes, reason: after.needDateOverride ? after.needDateOverrideReason : null });
+      }
+    });
+  } catch (e) {
+    throw fromDbError(e);
+  }
+}
+
 // ---------- Čtení ----------
 
 export async function listNeeds(db: Db, actor: SessionActor, projectId: string) {
@@ -404,10 +483,14 @@ export async function listNeeds(db: Db, actor: SessionActor, projectId: string) 
     : [];
   const respIds = [...new Set(needs.map((n) => n.responsibleUserId).filter(Boolean))] as string[];
   const names = new Map((respIds.length ? await db.select({ id: users.id, n: users.displayName }).from(users).where(inArray(users.id, respIds)) : []).map((u) => [u.id, u.n]));
+  const evs = new Map((await db.select().from(events).where(eq(events.projectId, projectId))).map((e) => [e.id, e]));
+  const today = pragueToday();
   return {
     manage: canProject(actor, "material.manage", { status: project.status, membership }).allowed,
     needs: needs.map((n) => ({
       ...n,
+      eventTitle: n.needEventId ? evs.get(n.needEventId)?.title ?? null : null,
+      schedule: scheduleOf(n, n.needEventId ? evs.get(n.needEventId) ?? null : null, today),
       responsibleName: n.responsibleUserId ? names.get(n.responsibleUserId) ?? "?" : null,
       sources: sources.filter((x) => x.s.materialNeedId === n.id).map((x) => ({ ...x.s, item: x.it })),
     })),
@@ -429,7 +512,19 @@ export async function getNeed(db: Db, actor: SessionActor, projectId: string, ne
   const [resp] = need.responsibleUserId ? await db.select({ n: users.displayName }).from(users).where(eq(users.id, need.responsibleUserId)) : [];
   // Novější revize stejného rozpočtového dokumentu (jen upozornění – nic se nepřepisuje).
   const newer = sources.filter((x) => x.doc.currentRevisionId !== x.rev.id).map((x) => x.doc.title);
+  // Termíny (V2-4): události zakázky pro výběr + výpočet z aktuálních údajů.
+  const projectEvents = await db.select().from(events).where(eq(events.projectId, projectId)).orderBy(asc(events.plannedDate), asc(events.contractDate), asc(events.title));
+  const event = need.needEventId ? projectEvents.find((e) => e.id === need.needEventId) ?? null : null;
+  const today = pragueToday();
+  const suggested = !need.needEventId && !need.needDateOverride ? suggestAssemblyEvent(projectEvents, today) : null;
   return {
+    today,
+    schedule: scheduleOf(need, event, today),
+    leadTime: leadTimeText(need),
+    event,
+    // Ve výběru jen platné události (+ právě navázaná, i když byla mezitím zrušena).
+    eventOptions: projectEvents.filter((e) => e.status === "active" || e.id === need.needEventId),
+    suggestedEvent: suggested,
     manage: canProject(actor, "material.manage", { status: project.status, membership }).allowed && need.status !== "archived",
     canUnarchive: canProject(actor, "material.manage", { status: project.status, membership }).allowed && need.status === "archived",
     need,
@@ -470,4 +565,18 @@ export async function getItemsForTracking(db: Db, actor: SessionActor, projectId
     const t = taken.get(id) ?? [];
     return { item: it, tracking: t, allocation: allocationOf(it.quantity, t.map((x) => x.quantityTaken)) };
   });
+}
+
+/** Dodávky navázané na událost – pro detail události („co se přepočítá při posunu montáže“). */
+export async function listNeedsForEvent(db: Db, actor: SessionActor, projectId: string, eventId: string) {
+  await requireProject(db, actor, projectId, "material.view");
+  if (!isUuid(eventId)) return [];
+  const [ev] = await db.select().from(events).where(and(eq(events.id, eventId), eq(events.projectId, projectId)));
+  if (!ev) return [];
+  const rows = await db.select().from(materialNeeds).where(and(eq(materialNeeds.needEventId, eventId), eq(materialNeeds.projectId, projectId)));
+  const today = pragueToday();
+  return rows
+    .filter((n) => n.status !== "archived")
+    .map((n) => ({ id: n.id, name: n.name, needOffsetDays: n.needOffsetDays, schedule: scheduleOf(n, ev, today) }))
+    .sort((a, b) => (a.schedule.orderBy ?? "9999").localeCompare(b.schedule.orderBy ?? "9999") || a.name.localeCompare(b.name, "cs"));
 }

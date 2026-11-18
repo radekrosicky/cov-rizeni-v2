@@ -5,6 +5,7 @@ import { listBudgetSources, listNeeds } from "@/server/app";
 import { SavedNotice } from "@/ui/Notices";
 import { btnPrimary, btnSecondary, card } from "@/ui/styles";
 import { fmtQty, load } from "./data";
+import { ScheduleLine } from "./ScheduleView";
 
 export const metadata: Metadata = { title: "Materiál" };
 
@@ -62,7 +63,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
             )}
           </div>
         </div>
-        <p className="mt-1 text-sm text-slate-600">Sledovaná dodávka není objednávka. Termíny objednání a dodání přijdou v další etapě.</p>
+        <p className="mt-1 text-sm text-slate-600">Sledovaná dodávka není objednávka. Doporučený termín objednání je výpočet z termínu montáže, dodací lhůty a rezervy – objednávky aplikace zatím neeviduje.</p>
       </section>
 
       {visible.length === 0 ? (
@@ -87,6 +88,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
                 {n.trackingReasonNote ? ` – ${n.trackingReasonNote}` : ""} · Plánováno: {fmtQty(n.plannedQuantity, n.unit)} · Odpovědný:{" "}
                 <span className={n.responsibleName ? "" : "font-semibold text-signal-risk"}>{n.responsibleName ?? "Nepřiřazeno"}</span>
               </p>
+              {n.status !== "archived" && <ScheduleLine schedule={n.schedule} />}
               <p className="text-xs text-slate-500">
                 {n.sources.length === 0
                   ? "Ruční záznam (bez rozpočtu)"

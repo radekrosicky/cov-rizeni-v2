@@ -14,6 +14,7 @@ import {
   setItemKind,
   unarchiveNeed,
   updateNeed,
+  updateNeedSchedule,
   updateSourceQuantity,
   voidImport,
   type NeedFields,
@@ -191,4 +192,25 @@ export async function markItemReviewedAction(projectId: string, itemId: string, 
     return toFormState(e);
   }
   redirect(`${base(projectId)}/polozky/${itemId}?ulozeno=1`);
+}
+
+/** Termín potřeby, dodací lhůta a rezerva (V2-4). */
+export async function updateNeedScheduleAction(projectId: string, needId: string, _: FormState, fd: FormData): Promise<FormState> {
+  const actor = await getCurrentActor();
+  if (!actor) return NOT_SIGNED_IN;
+  try {
+    await updateNeedSchedule(actor, projectId, needId, int(fd, "version"), {
+      needEventId: optStr(fd, "needEventId"),
+      needOffsetDays: optStr(fd, "needOffsetDays"),
+      needDateOverride: optStr(fd, "needDateOverride"),
+      needDateOverrideReason: optStr(fd, "needDateOverrideReason"),
+      leadTimeState: optStr(fd, "leadTimeState"),
+      leadTimeDays: optStr(fd, "leadTimeDays"),
+      leadTimeUnit: optStr(fd, "leadTimeUnit"),
+      reserveDays: optStr(fd, "reserveDays"),
+    });
+  } catch (e) {
+    return toFormState(e);
+  }
+  redirect(`${base(projectId)}/${needId}?ulozeno=terminy`);
 }

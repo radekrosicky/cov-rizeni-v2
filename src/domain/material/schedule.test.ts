@@ -159,6 +159,30 @@ describe("neznámé a chybějící údaje – nic se nevymýšlí", () => {
     expect(s.headline).toMatch(/Ověřit dodací lhůtu/);
   });
 
+  it("dodací lhůta 0 dní (skladem) je ZNÁMÁ hodnota – objednat nejpozději v den „dodat nejpozději“", () => {
+    const s = computeSchedule(need({ leadTimeDays: 0, leadTimeUnit: "calendar" }), TODAY);
+    expect(s.state).not.toBe("lead_time_unknown");
+    expect([s.deliverBy, s.orderBy]).toEqual(["2027-02-08", "2027-02-08"]);
+    expect(s.steps.join(" ")).toMatch(/0 dní \(skladem/);
+    expect(codes(s)).not.toContain("lead_time_unknown");
+    // stejně u pracovních dní
+    expect(computeSchedule(need({ leadTimeDays: 0, leadTimeUnit: "working" }), TODAY).orderBy).toBe("2027-02-08");
+  });
+
+  it("dodací lhůta 0 dní: „dodat nejpozději“ v sobotu → objednat v pátek", () => {
+    // potřeba 27. 2. 2027 (sobota), rezerva 0
+    const s = computeSchedule(need({ offsetDays: -2, reserveDays: 0, leadTimeDays: 0, leadTimeUnit: "working" }), TODAY);
+    expect([s.deliverBy, s.orderBy]).toEqual(["2027-02-27", "2027-02-26"]);
+    expect(codes(s)).toContain("order_date_shifted");
+  });
+
+  it("neznámá lhůta (null) se nikdy nezamění za 0", () => {
+    const unknown = computeSchedule(need({ leadTimeDays: null, leadTimeUnit: null, leadTimeStatus: null }), TODAY);
+    const zero = computeSchedule(need({ leadTimeDays: 0 }), TODAY);
+    expect(unknown.orderBy).toBeNull();
+    expect(zero.orderBy).not.toBeNull();
+  });
+
   it("odhad dodací lhůty → orientační datum s výrazným „Dodací lhůtu ověřit“", () => {
     const s = computeSchedule(need({ leadTimeStatus: "estimate" }), TODAY);
     expect(s.orderBy).toBe("2026-12-28");

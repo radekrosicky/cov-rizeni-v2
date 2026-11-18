@@ -15,7 +15,7 @@ ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_event_or_override" C
 ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_override_no_offset" CHECK ("material_needs"."need_date_override" is null or "material_needs"."need_offset_days" = 0);--> statement-breakpoint
 ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_lead_time_complete" CHECK (("material_needs"."lead_time_days" is null and "material_needs"."lead_time_unit" is null and "material_needs"."lead_time_status" is null)
        or ("material_needs"."lead_time_days" is not null and "material_needs"."lead_time_unit" is not null and "material_needs"."lead_time_status" is not null));--> statement-breakpoint
-ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_lead_time_range" CHECK ("material_needs"."lead_time_days" is null or "material_needs"."lead_time_days" between 1 and 730);--> statement-breakpoint
+ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_lead_time_range" CHECK ("material_needs"."lead_time_days" is null or "material_needs"."lead_time_days" between 0 and 730);--> statement-breakpoint
 ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_lead_unit_valid" CHECK ("material_needs"."lead_time_unit" is null or "material_needs"."lead_time_unit" in ('calendar', 'working'));--> statement-breakpoint
 ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_lead_status_valid" CHECK ("material_needs"."lead_time_status" is null or "material_needs"."lead_time_status" in ('estimate', 'confirmed'));--> statement-breakpoint
 ALTER TABLE "material_needs" ADD CONSTRAINT "material_needs_reserve_range" CHECK ("material_needs"."reserve_days" between 0 and 365);--> statement-breakpoint

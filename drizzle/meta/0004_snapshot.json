@@ -1739,7 +1739,7 @@
         },
         "material_needs_lead_time_range": {
           "name": "material_needs_lead_time_range",
-          "value": "\"material_needs\".\"lead_time_days\" is null or \"material_needs\".\"lead_time_days\" between 1 and 730"
+          "value": "\"material_needs\".\"lead_time_days\" is null or \"material_needs\".\"lead_time_days\" between 0 and 730"
         },
         "material_needs_lead_unit_valid": {
           "name": "material_needs_lead_unit_valid",

@@ -55,6 +55,11 @@ const FIELD_LABELS: Record<string, string> = {
   trackingReasonNote: "vlastní důvod",
   responsibleUserId: "odpovědný",
   reviewReasons: "kontrola",
+  needEvent: "termín podle události",
+  needOffsetDays: "posun vůči události (dny)",
+  needDateOverride: "vlastní datum potřeby",
+  leadTime: "dodací lhůta",
+  reserveDays: "rezerva (dny)",
 };
 
 const fmt = (d: Date) =>

@@ -21,7 +21,8 @@ test("import: rozpočet z Dokumentů → náhled sloupců → kontrola → potvr
   await signInAs(page, "Zástupce");
   await openFiktivin(page);
   await page.goto(`${projectUrl}/material`);
-  await expect(page.getByText("Zatím žádné sledované dodávky.")).toBeVisible();
+  // Fiktivní dodávky s termíny (V2-4) jsou ruční – rozpočet zatím není načtený.
+  await expect(page.getByRole("link", { name: "Dmychadla D1–D2 (fiktivní)" })).toBeVisible();
   await page.getByRole("link", { name: "Načíst položky z rozpočtu" }).click();
   await page.getByRole("link", { name: /Načíst položky \(rev\. 1\)/ }).click();
   await expect(page.getByText("Krok 2 ze 3")).toBeVisible();

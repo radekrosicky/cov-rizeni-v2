@@ -566,7 +566,7 @@ export const materialNeeds = pgTable(
       sql`(${t.leadTimeDays} is null and ${t.leadTimeUnit} is null and ${t.leadTimeStatus} is null)
        or (${t.leadTimeDays} is not null and ${t.leadTimeUnit} is not null and ${t.leadTimeStatus} is not null)`,
     ),
-    check("material_needs_lead_time_range", sql`${t.leadTimeDays} is null or ${t.leadTimeDays} between 1 and 730`),
+    check("material_needs_lead_time_range", sql`${t.leadTimeDays} is null or ${t.leadTimeDays} between 0 and 730`),
     check("material_needs_lead_unit_valid", sql`${t.leadTimeUnit} is null or ${inList(t.leadTimeUnit, LEAD_TIME_UNITS)}`),
     check("material_needs_lead_status_valid", sql`${t.leadTimeStatus} is null or ${inList(t.leadTimeStatus, LEAD_TIME_STATUSES)}`),
     check("material_needs_reserve_range", sql`${t.reserveDays} between 0 and 365`),

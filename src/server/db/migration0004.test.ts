@@ -120,7 +120,7 @@ describe("migrace 0004 – pravidla v databázi", () => {
     expect(await pgError(addNeed({ needEventId: ev.id, needOffsetDays: 366 }))).toMatch(/offset_range/);
   });
 
-  it("dodací lhůta: buď celá (počet + jednotka + stav), nebo žádná (= neznámá); 1–730 dní", async () => {
+  it("dodací lhůta: buď celá (počet + jednotka + stav), nebo žádná (= neznámá); 0–730 dní", async () => {
     const n = await addNeed();
     await setNeed(n.id, { leadTimeDays: 42, leadTimeUnit: "calendar", leadTimeStatus: "estimate" });
     await setNeed(n.id, { leadTimeDays: 30, leadTimeUnit: "working", leadTimeStatus: "confirmed" });
@@ -133,10 +133,20 @@ describe("migrace 0004 – pravidla v databázi", () => {
     ]) {
       expect(await pgError(setNeed(n.id, bad))).toMatch(/lead_time_complete/);
     }
-    expect(await pgError(setNeed(n.id, { leadTimeDays: 0, leadTimeUnit: "calendar", leadTimeStatus: "estimate" }))).toMatch(/lead_time_range/);
+    expect(await pgError(setNeed(n.id, { leadTimeDays: -1, leadTimeUnit: "calendar", leadTimeStatus: "estimate" }))).toMatch(/lead_time_range/);
     expect(await pgError(setNeed(n.id, { leadTimeDays: 731, leadTimeUnit: "calendar", leadTimeStatus: "estimate" }))).toMatch(/lead_time_range/);
     expect(await pgError(setNeed(n.id, { leadTimeDays: 5, leadTimeUnit: "tydny" as never, leadTimeStatus: "estimate" }))).toMatch(/lead_unit_valid/);
     expect(await pgError(setNeed(n.id, { leadTimeDays: 5, leadTimeUnit: "calendar", leadTimeStatus: "unknown" as never }))).toMatch(/lead_status_valid/);
+  });
+
+  it("dodací lhůta 0 dní (skladem) jde uložit jen VÝSLOVNĚ; neznámá lhůta zůstane prázdná, ne 0", async () => {
+    const unknown = await addNeed();
+    expect(unknown.leadTimeDays).toBeNull(); // výchozí = neznámá, žádné dosazení nuly
+    const stock = await addNeed({ leadTimeDays: 0, leadTimeUnit: "calendar", leadTimeStatus: "confirmed" });
+    expect([stock.leadTimeDays, stock.leadTimeUnit, stock.leadTimeStatus]).toEqual([0, "calendar", "confirmed"]);
+    // 0 bez jednotky a stavu není „neznámá“ ani platná – databáze ji odmítne.
+    expect(await pgError(addNeed({ leadTimeDays: 0 }))).toMatch(/lead_time_complete/);
+    await setNeed(unknown.id, { leadTimeDays: 730, leadTimeUnit: "working", leadTimeStatus: "estimate" });
   });
 
   it("rezerva 0–365 kalendářních dní", async () => {

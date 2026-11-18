@@ -3,11 +3,11 @@
 Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vod.
 **Není to ERP.** Hlavní otázka: *„Co dnes musím řešit a proč?“*
 
-> **Stav: etapa V2-3 – Excelový rozpočet a sledování materiálu** (navazuje na V2-1 a V2-2; V2-2 zatím není uživatelsky ověřená).
+> **Stav: etapa V2-4 – Termíny materiálu a doporučené objednání** (navazuje na V2-1 až V2-3; V2-2 a V2-3 zatím nejsou uživatelsky ověřené).
 > Pouze fiktivní data. Skutečné přihlášení zatím neexistuje – ve vývojovém režimu se volí
 > **fiktivní vývojová identita** (není to zabezpečení; v produkčním režimu je technicky vypnutá).
 
-## Co funguje (V2-1 + V2-2 + V2-3)
+## Co funguje (V2-1 až V2-4)
 
 | Oblast | Stav |
 |---|---|
@@ -22,14 +22,16 @@ Jednoduchý pracovní nástroj pro řízení realizací čistíren odpadních vo
 | Kontrola typu souboru podle obsahu (PDF, XLSX, DOCX, JPG, PNG, WEBP, HEIC, TIFF, DWG, DXF; XLSX/DOCX včetně struktury a rozbaleného obsahu), limit 50 MB | ✅ V2-2 |
 | **Rozpočet:** načtení XLSX z Dokumentů, náhled listů, potvrzení sloupců, kontrola nejednoznačných položek, uložení; původní hodnoty dohledatelné | ✅ V2-3 |
 | **Sledované dodávky:** z jedné položky, sloučení, rozdělení, ruční bez Excelu, důvod sledování, odpovědný („Nepřiřazeno“) | ✅ V2-3 |
-| Termíny potřeby a doporučené objednání (V2-4) | 🟡 návrh migrace 0004 ke schválení ([docs/DATABAZE-V2-4.md](docs/DATABAZE-V2-4.md)); obrazovky zatím ne |
+| **Termíny:** montážní událost + posun, dodací lhůta (neznámá / odhad / potvrzená, kalendářní či pracovní dny, 0 = skladem), rezerva 14 dní; doporučené datum objednání s vysvětlením výpočtu, české svátky, automatický přepočet při posunu montáže | ✅ V2-4 |
+| **Co dnes řešit:** materiál napříč přidělenými zakázkami (ověřit stav objednávky, objednat do 14 dní, chybějící termín montáže, neověřená dodací lhůta) | ✅ V2-4 |
+| Evidence skutečných objednávek a dodání | ⛔ další etapa |
 | Detail zakázky – záložky Úkoly, Připravenost | ⛔ jasně označené prázdné stavy |
-| „Co dnes řešit“, „Moje úkoly“ | ⛔ jasně označené prázdné stavy |
+| „Moje úkoly“; úkoly a připravenost v „Co dnes řešit“ | ⛔ jasně označené prázdné stavy |
 | Skutečné přihlášení e-mailem a heslem | ⛔ samostatná etapa |
 
 ## Spuštění v GitHub Codespaces
 
-1. Na GitHubu přepněte na větev `v2-3-rozpocet-material`.
+1. Na GitHubu přepněte na větev `v2-4-terminy`.
 2. **Code → Codespaces → Create codespace on …**
 3. Počkejte na přípravu: nainstalují se knihovny a **založí se vývojová databáze s fiktivními daty**
    (`npm run db:setup -- --if-missing`).
@@ -54,7 +56,7 @@ git fetch origin
 ```
 
 ```bash
-git switch v2-3-rozpocet-material
+git switch v2-4-terminy
 ```
 
 ```bash
@@ -69,8 +71,9 @@ npm run db:migrate
 npm run dev
 ```
 
-`db:migrate` doplní nové tabulky a vaše dosavadní zkušební data ponechá. Chcete-li fiktivní dokumenty včetně
-fiktivního rozpočtu, použijte místo něj `npm run db:reset` (smaže vývojovou databázi a založí ji znovu s fiktivními daty).
+`db:migrate` doplní nové tabulky a sloupce a vaše dosavadní zkušební data ponechá. Chcete-li fiktivní dokumenty, fiktivní
+rozpočet a **fiktivní dodávky s termíny (V2-4)**, použijte místo něj `npm run db:reset` (smaže vývojovou databázi a založí ji
+znovu s fiktivními daty).
 
 ## Spuštění na vlastním počítači
 
@@ -128,7 +131,7 @@ src/
     budget/       čtení Excelu v samostatném procesu s limity (readerProcess.ts, reader.ts)
     seed/         fiktivní data
   lib/            technické pomůcky
-drizzle/          SQL migrace (0000 tabulky, 0001 ochrany, 0002 dokumenty, 0003 rozpočet a materiál; 0004 termíny – návrh) + seznam schválených
+drizzle/          SQL migrace (0000 tabulky, 0001 ochrany, 0002 dokumenty, 0003 rozpočet a materiál; 0004 termíny) + seznam schválených
 scripts/          db:setup / db:reset / db:migrate
 e2e/              testy v prohlížeči
 tests/            architektonické testy
@@ -142,7 +145,7 @@ docs/             dokumentace
 - [docs/DATABAZE-V2-1.md](docs/DATABAZE-V2-1.md) – tabulky, přístup uživatelů, migrace a její stav
 - [docs/PLAN-V2-1.md](docs/PLAN-V2-1.md) – plán etapy V2-1 a rozhodnutí
 - [docs/PLAN-V2-2.md](docs/PLAN-V2-2.md) / [docs/DATABAZE-V2-2.md](docs/DATABAZE-V2-2.md) – dokumenty: plán, databáze, bezpečnost nahrávání
-- [docs/PLAN-V2-4.md](docs/PLAN-V2-4.md) / [docs/DATABAZE-V2-4.md](docs/DATABAZE-V2-4.md) – V2-4 termíny potřeby a doporučené objednání: plán (schválen), návrh migrace 0004 (ke schválení)
+- [docs/PLAN-V2-4.md](docs/PLAN-V2-4.md) / [docs/DATABAZE-V2-4.md](docs/DATABAZE-V2-4.md) – V2-4 termíny potřeby a doporučené objednání: plán, migrace 0004, implementace
 - [docs/PLAN-V2-3.md](docs/PLAN-V2-3.md) / [docs/DATABAZE-V2-3.md](docs/DATABAZE-V2-3.md) – V2-3 rozpočet a materiál: plán, databáze, ochrana paměti, omezení PGlite
 - [docs/OTAZKY-PRED-DATABAZI.md](docs/OTAZKY-PRED-DATABAZI.md) – rozhodnutí Q1–Q12
 - [docs/DATOVY-MODEL-NAVRH.md](docs/DATOVY-MODEL-NAVRH.md) – logický model celé aplikace

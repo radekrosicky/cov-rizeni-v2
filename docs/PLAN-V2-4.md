@@ -99,7 +99,7 @@ Doporučení se počítá jen pro **nearchivované** dodávky; po zavedení evid
 - Strážní test schématu (V2-1) dál hlídá, že se termín události neobjeví v jiné tabulce; `need_date_override` je schválená výjimka.
 - Změny údajů se zapisují do **historie** (kdo, kdy, před/po, důvod u vlastního data).
 
-## 6. Změny databáze (migrace `0004` – návrh ke schválení: [DATABAZE-V2-4.md](DATABAZE-V2-4.md))
+## 6. Změny databáze (migrace `0004` – schválena, viz [DATABAZE-V2-4.md](DATABAZE-V2-4.md))
 
 Jen **nové sloupce v `material_needs`**, žádná nová tabulka:
 
@@ -108,7 +108,7 @@ Jen **nové sloupce v `material_needs`**, žádná nová tabulka:
 | `need_event_id` | odkaz na `events` (nepovinné) | událost téže zakázky (trigger) |
 | `need_offset_days` | celé číslo, výchozí 0 | −365 … +365 (záporné = před událostí) |
 | `need_date_override` + `need_date_override_reason` | datum + text (nepovinné) | jen spolu; **nelze zároveň s událostí** |
-| `lead_time_days` | celé číslo (nepovinné) | 1 … 730; prázdné = neznámá |
+| `lead_time_days` | celé číslo (nepovinné) | 0 … 730 (0 = skladem, jen výslovně zadaná); prázdné = neznámá |
 | `lead_time_unit` | `calendar` / `working` | jen spolu s lhůtou |
 | `lead_time_status` | `estimate` / `confirmed` | jen spolu s lhůtou (odhad vs. potvrzeno dodavatelem) |
 | `reserve_days` | celé číslo, výchozí **14** | 0 … 365, vždy kalendářní dny |
@@ -159,3 +159,8 @@ Stavy dodávky (`to_confirm`, `archived`) se nemění; „objednáno / dodáno�
    vypočítané z aktuálních dat; netvrdí „neobjednáno“, jen vyzývá k ověření.
 6. Aplikace může **nabídnout** nejbližší událost „zahájení montáže technologie“, ale uživatel ji musí **výslovně potvrdit**
    (na ČOV může být více etap / linek).
+
+## 11. Stav: V2-4 implementována
+
+Migrace 0004 schválena (s lhůtou 0–730 dní) a aplikována na vývojovou databázi. Hotové obrazovky a testy viz
+[DATABAZE-V2-4.md](DATABAZE-V2-4.md), oddíl 7. Evidence skutečných objednávek a dodání zůstává na další etapu.
